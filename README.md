@@ -60,7 +60,7 @@ piranid/
 - **Kubernetes** (K3s for lightweight deployment)
 - **Docker** for containerization
 - **Go** for backend microservices
-- ~~**Prometheus & Grafana** for monitoring~~
+- ~~**Prometheus & Grafana** for monitoring~~ (not yet)
 - **Nginx** for load balancing
 
 ## Usage
