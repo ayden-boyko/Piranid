@@ -71,9 +71,3 @@ piranid/
 
 Piranid serves as a scalable, cloud-ready platform for distributed computing experiments, hybrid cloud integration, and Kubernetes learning. The project is designed to be extensible and can be expanded with additional cloud services or IoT integrations.
 
-## License
-
-**MIT License**
-
-This project provides a robust, cost-effective Kubernetes cluster using Raspberry Pi devices, ideal for learning and real-world distributed computing.
-
