@@ -2,7 +2,7 @@
 
 ## Overview
 
-Piranid is a cloud-connected Kubernetes cluster project running on a fleet of Raspberry Pi devices to create a distributed computing environment. It integrates with major cloud providers for hybrid deployments and demonstrates expertise in container orchestration, microservices management, and cloud-native development. It features a lightweight control plane on a Raspberry Pi 4B and multiple worker nodes using Raspberry Pi Zero 2Ws. The system integrates with cloud services for monitoring, management, and scalability.
+Piranid is a cloud-connected Kubernetes cluster project running on a fleet of Raspberry Pi devices to create a distributed computing environment. It integrates with major cloud providers for hybrid deployments and demonstrates competency in container orchestration, microservices management, and cloud-native development. It features a lightweight control plane on a Raspberry Pi 4B and multiple worker nodes using Raspberry Pi Zero 2Ws. The system integrates with cloud services for monitoring, management, and scalability.
 
 ## Features
 
