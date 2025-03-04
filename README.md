@@ -57,6 +57,7 @@ piranid/
 
 - **1 x Raspberry Pi 4B** (Master Node)
 - **4 x Raspberry Pi Zero 2W** (Worker Nodes)
+- **1 x Cluster Hat v2.5**
 
 ## Technologies Used
 
