@@ -46,6 +46,9 @@ piranid/
 │   ├── integration/               # Integration tests between services
 │   ├── e2e/                       # End-to-end tests for full system validation
 │   ├── load/                      # Load and performance testing
+├── nginx/                         # Reverse proxy configuration
+│   ├── Dockerfile                 # Dockerfile for Nginx container image
+│   ├── nginx.conf                 # Nginx configuration file
 ├── README.md                      # Project documentation
 └── .gitignore                     # Ignored files and directories
 ```
