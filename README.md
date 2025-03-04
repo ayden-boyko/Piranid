@@ -19,7 +19,7 @@ Piranid is a cloud-connected Kubernetes cluster project running on a fleet of Ra
 
 ## Repository Structure
 
-``` bash
+``` plaintext
 piranid/
 ├── controllers/                   # Code for the control plane (Pi 4B, called Norn)
 │   ├── main.go                    # Entry point for controller logic
