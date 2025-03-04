@@ -2,7 +2,7 @@
 
 ## Overview
 
-Piranid is a cloud-connected Kubernetes cluster project running on a fleet of Raspberry Pi devices to create a distributed computing environment. It integrates with major cloud providers for hybrid deployments and demonstrates expertise in container orchestration, microservices management, and cloud-native development. It features a lightweight control plane on a Raspberry Pi 4B and multiple worker nodes using Raspberry Pi Zero 2Ws. The system integrates with cloud services for monitoring, management, and scalability.
+Piranid is a cloud-connected Kubernetes cluster project running on a fleet of Raspberry Pi devices to create a distributed computing environment. It integrates with major cloud providers for hybrid deployments and demonstrates expertise in container orchestration, microservices management, and cloud-native development. It features a lightweight control plane on a Raspberry Pi 4B (Norn) and multiple worker nodes (Gaunts) using Raspberry Pi Zero 2Ws. The system integrates with cloud services for monitoring, management, and scalability.
 
 ## Features
 
@@ -21,12 +21,12 @@ Piranid is a cloud-connected Kubernetes cluster project running on a fleet of Ra
 
 ```
 piranid/
-├── controllers/                   # Code for the control plane (Pi 4B)
+├── controllers/                   # Code for the control plane (Pi 4B, called Norn)
 │   ├── main.go                    # Entry point for controller logic
 │   ├── scheduler/                 # Scheduler logic
 │   ├── api/                       # API server for cluster management
 │   └── Dockerfile                 # Dockerfile for controller container image
-├── nodes/                         # Code for worker nodes (Pi Zero 2Ws)
+├── nodes/                         # Code for worker nodes (Pi Zero 2Ws, called Gaunts)
 │   ├── main.go                    # Entry point for node logic
 │   ├── tasks/                     # Task execution logic
 │   └── Dockerfile                 # Dockerfile for node container image
