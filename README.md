@@ -4,7 +4,7 @@
 
 Piranid is a cloud-connected Kubernetes cluster project running on a fleet of Raspberry Pi devices to create a distributed computing environment. It integrates with major cloud providers for hybrid deployments and demonstrates expertise in container orchestration, microservices management, and cloud-native development. It features a lightweight control plane on a Raspberry Pi 4B (Norn) and multiple worker nodes (Gaunts) using Raspberry Pi Zero 2Ws. The system integrates with cloud services for monitoring, management, and scalability.
 
-## Features
+## Features (proposed)
 
 - **Kubernetes-based cluster** with Raspberry Pi nodes
 - **Hybrid cloud integration** with AWS, Google Cloud, or Azure
@@ -19,7 +19,7 @@ Piranid is a cloud-connected Kubernetes cluster project running on a fleet of Ra
 
 ## Repository Structure
 
-```
+``` md
 piranid/
 ├── controllers/                   # Code for the control plane (Pi 4B, called Norn)
 │   ├── main.go                    # Entry point for controller logic
@@ -57,6 +57,7 @@ piranid/
 
 - **1 x Raspberry Pi 4B** (Master Node)
 - **4 x Raspberry Pi Zero 2W** (Worker Nodes)
+- **1 x Cluster Hat v2.5**
 
 ## Technologies Used
 
@@ -69,10 +70,3 @@ piranid/
 ## Usage
 
 Piranid serves as a scalable, cloud-ready platform for distributed computing experiments, hybrid cloud integration, and Kubernetes learning. The project is designed to be extensible and can be expanded with additional cloud services or IoT integrations.
-
-## License
-
-**MIT License**
-
-This project provides a robust, cost-effective Kubernetes cluster using Raspberry Pi devices, ideal for learning and real-world distributed computing.
-
