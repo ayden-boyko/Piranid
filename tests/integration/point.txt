@@ -1,0 +1,3 @@
+for testing interactions between components.
+
+Use tools like go-dockertest to spin up temporary containers for testing.

@@ -1,0 +1,4 @@
+
+Use CloudTest to create repeatable multi-cluster Kubernetes environments for testing2.
+
+This allows you to test cluster creation, installation, and deletion processes.

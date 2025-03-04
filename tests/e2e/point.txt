@@ -1,0 +1,3 @@
+for full system tests.
+
+Use a tool like Testkube to run tests inside your Kubernetes cluster
