@@ -59,7 +59,7 @@ piranid/
 - **4 x Raspberry Pi Zero 2W** (Worker Nodes)
 - **1 x Cluster Hat v2.5**
 
-## Technologies Used
+## Technologies Used (proposed)
 
 - **Kubernetes** (K3s for lightweight deployment)
 - **Docker** for containerization
