@@ -45,18 +45,13 @@ Each Pi Zero 2W functions as a worker node, running containerized microservices 
 Each microservice runs in its own Docker container, deployed across different Raspberry Pi nodes.
 
 ### Core Microservices:
+- **API Gateway:** Routes client requests to the appropriate services.
 - **User Authentication Service:** Handles user registration, login, and token management.
 - **Data Storage Service:** Manages data persistence using a lightweight database.
-- **API Gateway:** Routes client requests to the appropriate services.
-- **Notification Service:** Sends email, SMS, or push notifications.
-- **File Management Service:** Handles file uploads, storage, and retrieval.
-- **Search Service:** Implements full-text search functionality.
-- **Analytics Service:** Collects and processes usage data.
-- **Payment Processing Service:** Securely handles payment gateway integrations.
 - **Caching Service:** Implements distributed caching for performance optimization.
+- **File Management Service:** Handles file uploads, storage, and retrieval.
 - **Task Scheduling Service:** Manages background jobs and recurring tasks.
 - **Logging & Monitoring Service:** Centralizes log collection and system monitoring.
-- **Content Management Service:** Manages content creation, storage, and delivery.
 
 ---
 
