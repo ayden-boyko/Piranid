@@ -7,15 +7,11 @@ Piranid is a cloud-connected Kubernetes cluster project running on a fleet of Ra
 ## Features (proposed)
 
 - **Kubernetes-based cluster** with Raspberry Pi nodes
-- **Hybrid cloud integration** with AWS, Google Cloud, or Azure
 - **Microservices deployment** using Docker and Kubernetes
 - **Automated CI/CD pipelines** for seamless updates
 - **Monitoring and scaling** with Prometheus and Grafana
 - **K3s-based Kubernetes deployment** for lightweight cluster management
-- **Azure Arc connectivity** for cloud-based cluster management
 - **Dynamic scalability** to add or remove worker nodes
-- **Azure Monitor integration** for cluster observability
-- **Edge processing** for local workload execution before cloud aggregation
 
 ## Repository Structure
 
@@ -61,11 +57,16 @@ piranid/
 
 ## Technologies Used (proposed)
 
-- **Kubernetes** (K3s for lightweight deployment)
-- **Docker** for containerization
 - **Go** for backend microservices
-- ~~**Prometheus & Grafana** for monitoring~~ (not yet)
-- **Nginx** for load balancing
+- **Docker**: For containerizing your microservices
+- **Nginx**: As the API gateway and load balancer on the Pi 4B
+- **K3s**: The lightweight Kubernetes distribution for orchestrating your containers
+- **containerd**: The container runtime used by K3s
+- **Prometheus and Grafana**: For monitoring and visualizing your cluster's performance
+- **gRPC**: An efficient protocol for communication between microservices
+- **A message queue like RabbitMQ**: For asynchronous communication between services
+- **SQLite**: a sql database for data storage
+- **Redis**: a caching service
 
 ## Usage
 
