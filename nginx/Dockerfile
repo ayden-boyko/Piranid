@@ -1,1 +1,0 @@
-FROM --platform=arm64v8 golang:1.19-alpine as builder

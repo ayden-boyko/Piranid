@@ -42,9 +42,6 @@ piranid/
 │   ├── integration/               # Integration tests between services
 │   ├── e2e/                       # End-to-end tests for full system validation
 │   ├── load/                      # Load and performance testing
-├── nginx/                         # Reverse proxy configuration
-│   ├── Dockerfile                 # Dockerfile for Nginx container image
-│   ├── nginx.conf                 # Nginx configuration file
 ├── README.md                      # Project documentation
 └── .gitignore                     # Ignored files and directories
 ```
@@ -59,8 +56,7 @@ piranid/
 
 - **Go** for backend microservices
 - **Docker**: For containerizing your microservices
-- **Nginx**: As the API gateway and load balancer on the Pi 4B
-- **K3s**: The lightweight Kubernetes distribution for orchestrating your containers
+- **K3s**: The lightweight Kubernetes distribution for orchestrating your containers/ Loadbalancer / Reverse Proxy
 - **containerd**: The container runtime used by K3s
 - **Prometheus and Grafana**: For monitoring and visualizing your cluster's performance
 - **gRPC**: An efficient protocol for communication between microservices

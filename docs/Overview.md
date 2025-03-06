@@ -1,7 +1,7 @@
 # Cloud-Connected Kubernetes Cluster on Raspberry Pi
 
 ## Overview
-This document describes the architecture of a cloud-connected Kubernetes cluster built using Raspberry Pi devices. The cluster consists of a Raspberry Pi 4B acting as the control plane and multiple Raspberry Pi Zero 2W nodes serving as worker nodes. The system orchestrates microservices using K3s, a lightweight Kubernetes distribution, and employs Nginx for API gateway and load balancing.
+This document describes the architecture of a cloud-connected Kubernetes cluster built using Raspberry Pi devices. The cluster consists of a Raspberry Pi 4B acting as the control plane and multiple Raspberry Pi Zero 2W nodes serving as worker nodes. The system orchestrates microservices using K3s, a lightweight Kubernetes distribution, which also handles load balancing.
 
 ---
 
@@ -69,9 +69,8 @@ Each microservice runs in its own Docker container, deployed across different Ra
 - A **lightweight Kubernetes distribution** designed for IoT and edge computing.
 - Manages deployment, scaling, and maintenance of microservices across the cluster.
 
-### Nginx as API Gateway and Load Balancer:
+### k3 as Reverse Proxy and Load Balancer:
 - Used on the Pi 4B to handle **incoming requests and routing**.
-- Provides **SSL termination and basic authentication**.
 
 ---
 
