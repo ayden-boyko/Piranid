@@ -9,7 +9,7 @@ Piranid is a cloud-connected Kubernetes cluster project running on a fleet of Ra
 - **Kubernetes-based cluster** with Raspberry Pi nodes
 - **Microservices deployment** using Docker and Kubernetes
 - **Automated CI/CD pipelines** for seamless updates
-- **Monitoring and scaling** with Prometheus and Grafana
+- **Monitoring** using a custom logging service
 - **K3s-based Kubernetes deployment** for lightweight cluster management
 - **Dynamic scalability** to add or remove worker nodes
 
@@ -17,6 +17,7 @@ Piranid is a cloud-connected Kubernetes cluster project running on a fleet of Ra
 
 ``` plaintext
 piranid/
+├── docs/                          # All documents relating tot the project(system design, etc)
 ├── controllers/                   # Code for the control plane (Pi 4B, called Norn)
 │   ├── main.go                    # Entry point for controller logic
 │   ├── scheduler/                 # Scheduler logic
@@ -58,11 +59,11 @@ piranid/
 - **Docker**: For containerizing your microservices
 - **K3s**: The lightweight Kubernetes distribution for orchestrating your containers/ Loadbalancer / Reverse Proxy
 - **containerd**: The container runtime used by K3s
-- **Prometheus and Grafana**: For monitoring and visualizing your cluster's performance
 - **gRPC**: An efficient protocol for communication between microservices
 - **A message queue like RabbitMQ**: For asynchronous communication between services
 - **SQLite**: a sql database for data storage
 - **Redis**: a caching service
+- **TSDB**: a time series DB for logs (Prometheus or InfluxDB)
 
 ## Usage
 
