@@ -13,7 +13,7 @@ import (
 type Node struct {
 	Server *http.Server
 	Router *http.ServeMux
-	db     interface{}
+	DB     interface{}
 	cache  *redis.Client
 }
 
@@ -25,7 +25,7 @@ func NewNode() *Node {
 	return &Node{
 		Server: &http.Server{},
 		Router: http.NewServeMux(),
-		db:     nil,
+		DB:     nil,
 		cache: redis.NewClient(&redis.Options{
 			Addr:     fmt.Sprintf("localhost:%s", os.Getenv("REDIS_PORT")),
 			Password: "", // No password set
@@ -40,10 +40,10 @@ func (n *Node) RegisterRoutes() {}
 func (n *Node) ShutdownDB() error { return nil }
 
 func (s *Node) SetDB(newDB interface{}) {
-	s.db = newDB
+	s.DB = newDB
 }
 
-func (s *Node) GetDB() interface{} { return s.db }
+func (s *Node) GetDB() interface{} { return s.DB }
 
 // Run runs the HTTPServer on the given port.
 //

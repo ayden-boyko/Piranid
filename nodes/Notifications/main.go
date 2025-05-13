@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -13,6 +14,7 @@ import (
 
 	node "github.com/ayden-boyko/Piranid/internal/node"
 	"github.com/trycourier/courier-go/v2"
+	_ "modernc.org/sqlite"
 )
 
 type NotificationNode struct {
@@ -52,6 +54,28 @@ func (n *NotificationNode) RegisterRoutes() {
 
 }
 
+func (l *NotificationNode) ShutdownDB() error {
+	db := l.Node.GetDB()
+	if influxDB, ok := db.(*sql.DB); ok {
+		influxDB.Close()
+	}
+	return errors.New("database is not influxdb2.Client")
+}
+
+// SafeShutdown is a function that gracefully stops the server and closes the database connection.
+func (n *NotificationNode) SafeShutdown(ctx context.Context) error {
+	// Shutdown the server
+	if err := n.Server.Shutdown(ctx); err != nil {
+		return err
+	}
+
+	// Close the database connection
+	if err := n.ShutdownDB(); err != nil {
+		return err
+	}
+	return nil
+}
+
 // Code for Auth node
 func main() {
 	fmt.Println("Creating a new Notification Node...")
@@ -63,6 +87,36 @@ func main() {
 	server := &NotificationNode{Node: node.NewNode(), Notifier: client}
 
 	fmt.Println("Notification Node created...")
+	fmt.Println("Initializing database...")
+
+	// TODO FIX THIS FUCKING SHIT FILES ARENT FOUND FOR SOME DUMB FUCKING REASON
+
+	db, err := sql.Open("sqlite", "../Notifications/database/notifications.db")
+	if err != nil {
+		log.Fatalf("Error opening database: %v", err)
+	}
+	fmt.Println("Database initialized...")
+
+	server.Node.SetDB(db)
+
+	// Read the contents of the initfile
+	sqlScript, err := os.ReadFile("../Notifications/database/Schema.sql")
+	if err != nil {
+		log.Fatalf("Error reading SQL script: %v", err)
+	}
+
+	log.Println("SQL Script:", string(sqlScript))
+
+	// Execute the SQL script to initialize the database
+	db, ok := server.Node.GetDB().(*sql.DB)
+	if !ok {
+		log.Fatalf("Error, expected server.Node.GetDB() to be of type *sql.DB, but got %T", server.Node.GetDB())
+	}
+	_, err = db.Exec(string(sqlScript))
+	if err != nil {
+		log.Fatalf("Error executing SQL script: %v, error within %s", err, string(sqlScript))
+	}
+	fmt.Println("Query executed...")
 
 	// Run the server in a separate goroutine. This allows the server to run
 	// concurrently with the other code.

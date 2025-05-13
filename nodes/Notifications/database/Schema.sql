@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    projecy_id INTEGER NOT NULL,
+    username VARCHAR(255) NOT NULL,
+    info VARCHAR(255) NOT NULL
+);

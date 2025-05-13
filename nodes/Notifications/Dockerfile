@@ -14,6 +14,7 @@ RUN go build -o /app/notification_server .
 FROM alpine:latest
 WORKDIR /app
 COPY --from=builder /app/notification_server .
+
 #give permissions to the binary
 RUN chmod +x notification_server
 # Expose port 8000.
