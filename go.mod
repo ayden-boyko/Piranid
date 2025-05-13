@@ -12,4 +12,5 @@ require (
 	github.com/oapi-codegen/runtime v1.0.0 // indirect
 	github.com/redis/go-redis/v9 v9.8.0 // indirect
 	golang.org/x/net v0.23.0 // indirect
+	google.golang.org/protobuf v1.36.6 // indirect
 )
