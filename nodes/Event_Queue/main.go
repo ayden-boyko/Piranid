@@ -1,4 +1,4 @@
-package eventqueue
+package main
 
 import (
 	"context"
@@ -25,7 +25,7 @@ func main() {
 	go func() {
 		// Run the server and check for errors. This will block until the server
 		// is shutdown.
-		if err := server.Run(fmt.Sprintf(":%s", os.Getenv("EVENT_QUEUE_PORT")), "DB"); !errors.Is(err, http.ErrServerClosed) {
+		if err := server.Run(fmt.Sprintf(":%s", os.Getenv("EVENT_QUEUE_PORT"))); !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("Error running Event Queue Node: %v", err)
 		}
 	}()

@@ -36,6 +36,14 @@ func NewNode() *Node {
 
 func (n *Node) RegisterRoutes() {}
 
+func (n *Node) ShutdownDB() error { return nil }
+
+func (s *Node) SetDB(db interface{}) {
+	s.db = db
+}
+
+func (s *Node) GetDB() interface{} { return s.db }
+
 // Run runs the HTTPServer on the given port.
 //
 // It first initializes the database connection and executes the SQL script
@@ -45,7 +53,7 @@ func (n *Node) RegisterRoutes() {}
 //
 // Then it registers the routes with the HTTPServer and runs it on the given
 // port.
-func (s *Node) Run(port string, db interface{}) error {
+func (s *Node) Run(port string) error {
 	// Print the port number
 	println("HTTPServer running on port " + port)
 	s.Server.Addr = port // Set the port
@@ -68,9 +76,9 @@ func (s *Node) SafeShutdown(ctx context.Context) error {
 	}
 
 	// Close the database connection
-	// if err := s.db.Close(); err != nil {
-	// 	return err
-	// }
+	if err := s.ShutdownDB(); err != nil {
+		return err
+	}
 
 	return nil
 }
