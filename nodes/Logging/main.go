@@ -33,6 +33,9 @@ func (l *LoggingNode) SetWriter(writeAPI api.WriteAPI) {
 // Redefine RegisterRoutes for LoggingNode
 func (l *LoggingNode) RegisterRoutes() {
 	// TODO Actual route registration for logging server
+	l.Node.Router.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, "hello")
+	})
 }
 
 func (l *LoggingNode) ShutdownDB() error {
@@ -68,7 +71,13 @@ func (l *LoggingNode) SafeShutdown(ctx context.Context) error {
 func main() {
 	// Create a new HTTP server. This server will be responsible for running the
 	// API and handling requests.
+	fmt.Println("Creating a new Logging Node...")
 	server := &LoggingNode{Node: node.NewNode()}
+
+	// Redis DB created
+	server.SetDB(influxdb2.NewClient(fmt.Sprintf("http://localhost:%s", os.Getenv("DB_PORT")), os.Getenv("DB_TOLKEN")))
+
+	fmt.Println("Database created...")
 
 	// try to set the writer
 	db := server.GetDB()
@@ -76,18 +85,18 @@ func main() {
 		server.SetWriter(influxClient.WriteAPI(os.Getenv("DB_ORG"), os.Getenv("DB_BUCKET")))
 	} else {
 		// handle error: db is not an influxdb2.Client
-		log.Fatal("db is not an influxdb2.Client \n Change the db to influxdb2.Client")
+		fmt.Printf("The type of db is %T\n", db)
+		log.Fatal("db is not an influxdb2.Client. Change the db to influxdb2.Client")
 	}
 
-	// Redis DB created
-	server.SetDB(influxdb2.NewClient(fmt.Sprintf("http://localhost:%s", os.Getenv("DB_PORT")), os.Getenv("DB_TOKEN")))
-
+	fmt.Println("Writer created...")
 	// Run the server in a sepasrate goroutine. This allows the server to run
 	// concurrently with the other code.
 	go func() {
+		fmt.Println("Starting Logging Node...")
 		// Run the server and check for errors. This will block until the server
 		// is shutdown.
-		if err := server.Run(fmt.Sprintf(":%s", os.Getenv("LOGGING_PORT"))); !errors.Is(err, http.ErrServerClosed) {
+		if err := server.Run(fmt.Sprintf(":%s", os.Getenv("LOGGING_PORT")), server.RegisterRoutes); !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("Error running Logging Node: %v", err)
 		}
 	}()

@@ -25,7 +25,7 @@ func main() {
 	go func() {
 		// Run the server and check for errors. This will block until the server
 		// is shutdown.
-		if err := server.Run(fmt.Sprintf(":%s", os.Getenv("NOTIFICATION_PORT"))); !errors.Is(err, http.ErrServerClosed) {
+		if err := server.Run(fmt.Sprintf(":%s", os.Getenv("NOTIFICATION_PORT")), server.RegisterRoutes); !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("Error running Logging Node: %v", err)
 		}
 	}()

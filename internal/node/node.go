@@ -1,10 +1,11 @@
-package server
+package node
 
 import (
 	"context"
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -38,8 +39,8 @@ func (n *Node) RegisterRoutes() {}
 
 func (n *Node) ShutdownDB() error { return nil }
 
-func (s *Node) SetDB(db interface{}) {
-	s.db = db
+func (s *Node) SetDB(newDB interface{}) {
+	s.db = newDB
 }
 
 func (s *Node) GetDB() interface{} { return s.db }
@@ -53,15 +54,24 @@ func (s *Node) GetDB() interface{} { return s.db }
 //
 // Then it registers the routes with the HTTPServer and runs it on the given
 // port.
-func (s *Node) Run(port string) error {
+func (s *Node) Run(port string, registerRoutes func()) error {
 	// Print the port number
-	println("HTTPServer running on port " + port)
+	fmt.Println("HTTPServer running on port " + port)
+
+	if !strings.HasPrefix(port, ":") {
+		port = ":" + port
+	}
+
 	s.Server.Addr = port // Set the port
 
 	// Register the routes
-	s.RegisterRoutes()
+	registerRoutes()
 
 	// Set the handler to the registered routes
+	if s.Router == nil {
+		fmt.Println("Router is nil")
+		s.Router = http.NewServeMux()
+	}
 	s.Server.Handler = s.Router
 
 	// Run the server
