@@ -91,8 +91,6 @@ func main() {
 	fmt.Println("Notification Node created...")
 	fmt.Println("Initializing database...")
 
-	// TODO FIX THIS FUCKING SHIT FILES ARENT FOUND FOR SOME DUMB FUCKING REASON
-
 	db, err := sql.Open("sqlite", "./Notification_DB.db")
 	if err != nil {
 		log.Fatalf("Error opening database: %v", err)
