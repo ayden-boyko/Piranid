@@ -56,10 +56,12 @@ func (n *NotificationNode) RegisterRoutes() {
 
 func (l *NotificationNode) ShutdownDB() error {
 	db := l.Node.GetDB()
-	if influxDB, ok := db.(*sql.DB); ok {
-		influxDB.Close()
+	if sqliteDB, ok := db.(*sql.DB); ok {
+		sqliteDB.Close()
+		fmt.Println("Database closed...")
+		return nil
 	}
-	return errors.New("database is not influxdb2.Client")
+	return errors.New("database is not *sql.DB, is type " + fmt.Sprintf("%T", db))
 }
 
 // SafeShutdown is a function that gracefully stops the server and closes the database connection.
@@ -91,7 +93,7 @@ func main() {
 
 	// TODO FIX THIS FUCKING SHIT FILES ARENT FOUND FOR SOME DUMB FUCKING REASON
 
-	db, err := sql.Open("sqlite", "../Notifications/database/notifications.db")
+	db, err := sql.Open("sqlite", "./Notification_DB.db")
 	if err != nil {
 		log.Fatalf("Error opening database: %v", err)
 	}
@@ -100,12 +102,10 @@ func main() {
 	server.Node.SetDB(db)
 
 	// Read the contents of the initfile
-	sqlScript, err := os.ReadFile("../Notifications/database/Schema.sql")
+	sqlScript, err := os.ReadFile("./Schema.sql")
 	if err != nil {
 		log.Fatalf("Error reading SQL script: %v", err)
 	}
-
-	log.Println("SQL Script:", string(sqlScript))
 
 	// Execute the SQL script to initialize the database
 	db, ok := server.Node.GetDB().(*sql.DB)

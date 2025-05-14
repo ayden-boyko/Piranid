@@ -14,11 +14,15 @@ RUN go build -o /app/notification_server .
 FROM alpine:latest
 WORKDIR /app
 COPY --from=builder /app/notification_server .
+COPY --from=builder /app/nodes/Notifications/database/* /app/
 
 #give permissions to the binary
 RUN chmod +x notification_server
-# Expose port 8000.
-EXPOSE 8000
+# Expose port 8081.
+EXPOSE 8081
+
+WORKDIR /app
+RUN ls -l /app
 
 # Set environment variables (as before)
 ENV NOTIFICATION_PORT=8004
