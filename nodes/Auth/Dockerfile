@@ -26,7 +26,5 @@ RUN ls -l /app
 
 # Set environment variables (as before)
 ENV AUTH_PORT=8001
-ENV COURIER_TOLKEN=pk_prod_BY39M20QJHMMV3QWC2MY5MNNB3WQ
-
 
 CMD ["./auth_server"]

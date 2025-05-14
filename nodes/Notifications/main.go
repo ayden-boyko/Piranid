@@ -28,7 +28,7 @@ func (n *NotificationNode) RegisterRoutes() {
 		fmt.Println("Sending notification...")
 		fmt.Fprint(w, "Sending notification...")
 		client := courier.CreateClient(
-			os.Getenv("COURIER_TOLKEN"), nil,
+			os.Getenv("COURIER_TOKEN"), nil,
 		)
 		requestID, err := client.SendMessage(
 			context.Background(),
@@ -82,7 +82,7 @@ func (n *NotificationNode) SafeShutdown(ctx context.Context) error {
 func main() {
 	fmt.Println("Creating a new Notification Node...")
 	client := courier.CreateClient(
-		os.Getenv("COURIER_TOLKEN"), nil,
+		os.Getenv("COURIER_TOKEN"), nil,
 	)
 	// Create a new HTTP server. This server will be responsible for sending
 	// notifications
