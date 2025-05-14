@@ -24,7 +24,7 @@ type NotificationNode struct {
 
 func (n *NotificationNode) RegisterRoutes() {
 	// TODO Actual route registration for logging server
-	n.Node.Router.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
+	n.Node.Router.HandleFunc("/notification_test", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Sending notification...")
 		fmt.Fprint(w, "Sending notification...")
 		client := courier.CreateClient(

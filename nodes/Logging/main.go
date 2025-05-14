@@ -35,7 +35,7 @@ func (l *LoggingNode) SetWriter(writeAPI api.WriteAPI) {
 // Redefine RegisterRoutes for LoggingNode
 func (l *LoggingNode) RegisterRoutes() {
 	// TODO Actual route registration for logging server
-	l.Node.Router.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
+	l.Node.Router.HandleFunc("/logging_test", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "hello")
 	})
 }

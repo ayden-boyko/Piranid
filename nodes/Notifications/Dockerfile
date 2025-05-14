@@ -18,8 +18,8 @@ COPY --from=builder /app/nodes/Notifications/database/* /app/
 
 #give permissions to the binary
 RUN chmod +x notification_server
-# Expose port 8081.
-EXPOSE 8081
+# Expose port 8084.
+EXPOSE 8084
 
 WORKDIR /app
 RUN ls -l /app
