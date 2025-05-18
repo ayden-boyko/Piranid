@@ -1,0 +1,88 @@
+// TODO FIX THESE PROTOCOLS
+service Notifier {
+    //requests that a notification is sent to the user, the id, denote what service is requesting
+    // the method is sms,email, push, etc
+    //data is any additional data that needs to be included
+    rpc RequestNotification(NotificationRequest) returns NotificationResponse;
+
+    // removes the notification DB (the user deactivates acount or something)
+    // the only required fields are service_id & username
+    rpc DeleteUser(NotificationRequest) returns NotificationResponse;
+
+    // THESE ARE GOOD METHODS, JUST NOT APPLICABLE HERE. THIS SERVICE ONLY SENDS NOTIFICATIONS, no storage
+    // rpc RequestNotificationStatus(NotificationStatusRequest) returns NotificationStatusResponse;
+    // rpc RequestNotificationList(NotificationListRequest) returns NotificationListResponse;
+
+    //updates the user's information, either email or phone must be filled
+    rpc RequestUserNotificationUpdate(UserNotificationUpdate) returns userNotificationResponse;
+
+    //requests a TFA notification (code will need to be generated)
+    // Will i need to send code to the other service?
+    rpc RequestTFA(TFARequest) returns TFAResponse;
+
+    // TODO rpc Retry()?
+}
+
+message NotificationRequest {
+    string service_id = 1;
+    string username = 2;
+    string method = 3;
+    string data = 4;
+}
+
+message NotificationResponse {
+    int success = 1;
+    optional string message = 2;
+}
+
+// message NotificationStatusRequest {
+//     string service_id = 1;
+//     string username = 2;
+// }
+
+// message NotificationStatusResponse {
+//     string service_id = 1;
+//     string username = 2;
+//     string message = 3;
+// }
+
+// message NotificationListRequest{
+//     string service_id = 1;
+//     string username = 2;
+//     google.protobuf.Timestamp start = 3;
+//     google.protobuf.Timestamp end = 4;
+// }
+
+// message NotificationListResponse{
+//     repeated string service_id = 1;
+//     repeated string username = 2;
+//     repeated string message = 3;
+// }
+
+message UserNotificationUpdate {
+    string service_id = 1;
+    string username = 2;
+    string email = 3;
+    int phone = 4;
+}
+
+message userNotificationResponse {
+    int success = 1;
+    optional message = 2;
+}
+
+message TFARequest{
+    string service_id = 1;
+    string username = 2;
+    string method = 3;
+    string contact_info = 4;
+    optional int timeout = 5;
+}
+
+message TFAResponse {
+    string service_id = 1;
+    string username = 2;
+    int sucess = 3;
+
+}
+

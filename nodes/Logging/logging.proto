@@ -5,7 +5,9 @@ service Logger {
     // ensure all data is persisted.
 
     rpc RequestLog (Log) returns (LogResponse);
+
     rpc SendLog (Log) returns (LogResponse);
+    
     // FlushLog ensures that all logs currently buffered are written out. 
     // This is typically used to ensure that any logs in memory are persisted 
     // to their destination, such as a file or external logging service.

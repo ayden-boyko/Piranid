@@ -1,0 +1,34 @@
+// TODO FIX THESE PROTOCOLS
+service Eventer {
+    //requests an async event to take place (i.e logging, non TFA, etc)
+    //! TFA IS NOT ASYNC DO NOT SEND tO THIS SERVER TFA IS TIME SENSITIVE
+    rpc RequestEvent(EventRequest) returns (EventResponse);
+
+    //goes through all the services and checks that data is consistent
+    // (i.e user want to be notified by email, checks that notification server has email contact, etc..)
+    rpc RequestConsistencyCheck(ConsistencyRequest) returns (ConsistencyResponse);
+
+    //I have the grpc log protocols alreayd in Logger, 
+    // Is it neccesary to be able to async add logs?
+    // whats the benefit of non-time sensetiev logging? IDK, MORE RESEARCH REQUIRED
+}
+
+message EventRequest {
+    string service_id = 1;
+    string username = 2;
+}
+
+message EventResponse {
+    string service_id = 1;
+    string username = 2;
+}
+
+message ConsistencyRequest {
+    string username = 1;
+}
+
+// Will this check all services? seems kinda overkill
+message ConsistencyResponse{
+    int success = 1;
+    string username = 2;
+}

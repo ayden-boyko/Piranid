@@ -15,18 +15,18 @@ Piranid is a cloud-connected Kubernetes cluster project running on a fleet of Ra
 
 ## Repository Structure
 
-``` plaintext
+```plaintext
 piranid/
-├── docs/                          # All documents relating tot the project(system design, etc)
-├── controllers/                   # Code for the control plane (Pi 4B, called Norn)
+├── docs/                          # All documents relating to the project(system design, etc)
+├── controllers/                   # Code for the control plane (Pi 4B, called Norns)
 │   ├── main.go                    # Entry point for controller logic
 │   ├── scheduler/                 # Scheduler logic
 │   ├── api/                       # API server for cluster management
 │   └── Dockerfile                 # Dockerfile for controller container image
 ├── nodes/                         # Code for worker nodes (Pi Zero 2Ws, called Gaunts)
-│   ├── main.go                    # Entry point for node logic
-│   ├── tasks/                     # Task execution logic
-│   └── Dockerfile                 # Dockerfile for node container image
+|   ├── tasks/                     # Node specific execution logic
+    │   ├── main.go                # Entry point for node logic
+    │   └── Dockerfile             # Dockerfile for node container image
 ├── shared/                        # Shared libraries and utilities
 │   ├── config/                    # Cluster-wide configuration files
 │   ├── utils.go                   # Shared helper functions
