@@ -13,12 +13,16 @@ import (
 	"time"
 
 	node "github.com/ayden-boyko/Piranid/internal/node"
+	//"github.com/ayden-boyko/Piranid/internal"
 	_ "modernc.org/sqlite"
 )
 
 type AuthNode struct {
 	*node.Node
+	service_ID string
 }
+
+func (n *AuthNode) GetServiceID() string { return n.service_ID }
 
 func (n *AuthNode) RegisterRoutes() {
 	// TODO Actual route registration for logging server
@@ -57,7 +61,7 @@ func (n *AuthNode) SafeShutdown(ctx context.Context) error {
 func main() {
 	// Create a new HTTP server. This server will be responsible for sending
 	// notifications
-	server := &AuthNode{Node: node.NewNode()}
+	server := &AuthNode{Node: node.NewNode(), service_ID: utils.NewServiceID("AUTH")}
 
 	fmt.Println("Auth Node created...")
 	fmt.Println("Initializing database...")

@@ -38,7 +38,8 @@ piranid/
 ├── scripts/                       # Deployment and management scripts
 │   ├── deploy.sh                  # Script to deploy all components to K8s
 │   └── join-cluster.sh            # Script to join worker nodes to the cluster
-├── tests/                         # Testing suite for the system
+├── test/                          # Testing suite for the system
+|   ├── cluster/                   # Tests for the entire cluster
 │   ├── unit/                      # Unit tests for components
 │   ├── integration/               # Integration tests between services
 │   ├── e2e/                       # End-to-end tests for full system validation
