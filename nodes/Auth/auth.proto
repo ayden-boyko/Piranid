@@ -1,4 +1,11 @@
-// TODO FIX THESE PROTOCOLS
+syntax = "proto3";
+
+enum Status {
+    failure = 0;
+    success = 1;
+}
+
+// TODO FIX THESE PROTOCOLS?
 service Authorizer{
 
     rpc NewUser (AuthCredentials) returns (AuthResponse);
@@ -21,6 +28,6 @@ message AuthCredentials {
 message AuthResponse {
     string service_id = 1;
     string username = 2;
-    int sucess = 3;
+    Status sucess = 3;
     string data = 4; // since this used for many auth interactions JWT may be returned here
 }

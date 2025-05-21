@@ -1,3 +1,11 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+enum Status {
+    failure = 0;
+    success = 1;
+}
 service Logger {
     // Buffered logs are logs that are temporarily held in memory before being 
     // written to their final destination. This can improve performance by 
@@ -23,10 +31,11 @@ service Logger {
     // stream will continue until the connection is closed. The client should 
     // read the stream until it is closed.
     rpc GetStream (LogStreamRequest) returns (stream Log);
+
     // CloseStream closes the given log stream and releases any resources 
     // associated with it. After closing, no further logs can be written to 
     // the stream.
-    rpc CloseStream (LogStreamRequest) returns (google.protobuf.Empty);
+    rpc CloseStream (LogStreamRequest) returns (LogResponse);
 
     // PerformQuery performs a query on the logs. The query is defined by the 
     // client and can be used to retrieve logs that match specific criteria. 
@@ -40,7 +49,7 @@ message Log {
     string trace_id = 2; // tarces operation throughout the services (i.e sign-in)
     string span_id = 3; // traces operation through actions (events in trace)
     string parent_id = 4; // for linking requests (can track process liyfcycle)
-    google.protobuf.Timestamp timestamp = 5;
+    google.protobuf.Timestamp timestamp = 5; // TODO use ntp time on micro services for more accuracy
     string log_level = 6;// SEC, INFO, ERROR, ETC
     string message = 7;
     optional string metadata = 8; // JSON format additional data(host, user, etc)
@@ -50,7 +59,7 @@ message Log {
 // successful, success will be set to 1. If there is an error, success will
 // be set to 0 and the message will contain the error message.
 message LogResponse {
-    int success = 1;
+    Status success = 1;
     optional string message = 2;
 }
 

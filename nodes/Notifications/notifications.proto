@@ -1,24 +1,31 @@
+syntax = "proto3";
+
+enum Status {
+    failure = 0;
+    success = 1;
+}
+
 // TODO FIX THESE PROTOCOLS
 service Notifier {
     //requests that a notification is sent to the user, the id, denote what service is requesting
     // the method is sms,email, push, etc
     //data is any additional data that needs to be included
-    rpc RequestNotification(NotificationRequest) returns NotificationResponse;
+    rpc RequestNotification(NotificationRequest) returns (NotificationResponse);
 
     // removes the notification DB (the user deactivates acount or something)
     // the only required fields are service_id & username
-    rpc DeleteUser(NotificationRequest) returns NotificationResponse;
+    rpc DeleteUser(NotificationRequest) returns (NotificationResponse);
 
     // THESE ARE GOOD METHODS, JUST NOT APPLICABLE HERE. THIS SERVICE ONLY SENDS NOTIFICATIONS, no storage
     // rpc RequestNotificationStatus(NotificationStatusRequest) returns NotificationStatusResponse;
     // rpc RequestNotificationList(NotificationListRequest) returns NotificationListResponse;
 
     //updates the user's information, either email or phone must be filled
-    rpc RequestUserNotificationUpdate(UserNotificationUpdate) returns userNotificationResponse;
+    rpc RequestUserNotificationUpdate(UserNotificationUpdate) returns (userNotificationResponse);
 
     //requests a TFA notification (code will need to be generated)
     // Will i need to send code to the other service?
-    rpc RequestTFA(TFARequest) returns TFAResponse;
+    rpc RequestTFA(TFARequest) returns (TFAResponse);
 
     // TODO rpc Retry()?
 }
@@ -31,7 +38,7 @@ message NotificationRequest {
 }
 
 message NotificationResponse {
-    int success = 1;
+    Status success = 1;
     optional string message = 2;
 }
 
@@ -62,13 +69,12 @@ message NotificationResponse {
 message UserNotificationUpdate {
     string service_id = 1;
     string username = 2;
-    string email = 3;
-    int phone = 4;
+    string contact_info = 3; // check for @, if not there, it's phone
 }
 
 message userNotificationResponse {
-    int success = 1;
-    optional message = 2;
+    Status success = 1;
+    optional string response_message = 2;
 }
 
 message TFARequest{
@@ -76,13 +82,13 @@ message TFARequest{
     string username = 2;
     string method = 3;
     string contact_info = 4;
-    optional int timeout = 5;
+    optional int32 timeout = 5;
 }
 
 message TFAResponse {
     string service_id = 1;
     string username = 2;
-    int sucess = 3;
+    Status sucess = 3;
 
 }
 
