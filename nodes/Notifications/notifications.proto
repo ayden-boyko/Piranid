@@ -39,7 +39,7 @@ message NotificationRequest {
 
 message NotificationResponse {
     Status success = 1;
-    optional string message = 2;
+    optional string response_message = 2;
 }
 
 // message NotificationStatusRequest {

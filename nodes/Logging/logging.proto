@@ -51,7 +51,7 @@ message Log {
     string parent_id = 4; // for linking requests (can track process liyfcycle)
     google.protobuf.Timestamp timestamp = 5; // TODO use ntp time on micro services for more accuracy
     string log_level = 6;// SEC, INFO, ERROR, ETC
-    string message = 7;
+    string log_message = 7;
     optional string metadata = 8; // JSON format additional data(host, user, etc)
 }
 
@@ -60,7 +60,7 @@ message Log {
 // be set to 0 and the message will contain the error message.
 message LogResponse {
     Status success = 1;
-    optional string message = 2;
+    optional string response_message = 2;
 }
 
 // LogStreamRequest is the request to get a stream of logs. The service_id

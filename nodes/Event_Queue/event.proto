@@ -5,6 +5,7 @@ enum Status {
     success = 1;
 }
 
+// TODO FIX THIS PROTOBUF
 
 service Eventer {
     //requests an async event to take place (i.e logging, non TFA, etc)
