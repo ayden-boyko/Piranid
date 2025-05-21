@@ -12,13 +12,17 @@ import (
 	"syscall"
 	"time"
 
+	utils "github.com/ayden-boyko/Piranid/internal"
 	node "github.com/ayden-boyko/Piranid/internal/node"
 	_ "modernc.org/sqlite"
 )
 
 type EventNode struct {
 	*node.Node
+	service_ID string
 }
+
+func (n *EventNode) GetServiceID() string { return n.service_ID }
 
 func (n *EventNode) RegisterRoutes() {
 	// TODO Actual route registration for logging server
@@ -57,7 +61,7 @@ func (n *EventNode) SafeShutdown(ctx context.Context) error {
 func main() {
 	// Create a new HTTP server. This server will be responsible for sending
 	// notifications
-	server := &EventNode{Node: node.NewNode()}
+	server := &EventNode{Node: node.NewNode(), service_ID: utils.NewServiceID("EVNT")}
 
 	fmt.Println("Event Node created...")
 	fmt.Println("Initializing database...")

@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	utils "github.com/ayden-boyko/Piranid/internal"
 	node "github.com/ayden-boyko/Piranid/internal/node"
 	"github.com/go-redis/redis"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
@@ -22,7 +23,10 @@ type LoggingNode struct {
 	*node.Node // embedding Node
 	writeAPI   api.WriteAPI
 	buffer     *redis.Client
+	service_ID string
 }
+
+func (n *LoggingNode) GetServiceID() string { return n.service_ID }
 
 func (l *LoggingNode) GetWriter() api.WriteAPI {
 	return l.writeAPI
@@ -73,7 +77,7 @@ func main() {
 		Addr:     fmt.Sprintf("localhost:%s", os.Getenv("REDIS_PORT")),
 		Password: "", // no password set
 		DB:       0,  // use default DB
-	})}
+	}), service_ID: utils.NewServiceID("LOGS")}
 
 	server.SetDB(influxdb2.NewClient(fmt.Sprintf("http://localhost:%s", os.Getenv("DB_PORT")), os.Getenv("DB_TOLKEN")))
 	fmt.Println("Database created...")

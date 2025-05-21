@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	utils "github.com/ayden-boyko/Piranid/internal"
 	node "github.com/ayden-boyko/Piranid/internal/node"
 	"github.com/trycourier/courier-go/v2"
 	_ "modernc.org/sqlite"
@@ -19,8 +20,11 @@ import (
 
 type NotificationNode struct {
 	*node.Node
-	Notifier *courier.Client
+	Notifier   *courier.Client
+	service_ID string
 }
+
+func (n *NotificationNode) GetServiceID() string { return n.service_ID }
 
 func (n *NotificationNode) RegisterRoutes() {
 	// TODO Actual route registration for logging server
@@ -86,7 +90,7 @@ func main() {
 	)
 	// Create a new HTTP server. This server will be responsible for sending
 	// notifications
-	server := &NotificationNode{Node: node.NewNode(), Notifier: client}
+	server := &NotificationNode{Node: node.NewNode(), Notifier: client, service_ID: utils.NewServiceID("NOTF")}
 
 	fmt.Println("Notification Node created...")
 	fmt.Println("Initializing database...")
