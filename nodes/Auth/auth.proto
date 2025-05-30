@@ -14,7 +14,6 @@ service Authorizer{
 
     rpc UserSignIn (AuthCredentials) returns (AuthResponse);
 
-
 }
 
 message AuthCredentials {

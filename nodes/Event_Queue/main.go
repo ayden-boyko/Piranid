@@ -22,6 +22,9 @@ type EventNode struct {
 	service_ID string
 }
 
+//TODO Your service could listen for special `control` or `configuration events on a management queue or exchange.
+// When it receives an event describing a new topic and binding, it would create them in RabbitMQ accordingly
+
 func (n *EventNode) GetServiceID() string { return n.service_ID }
 
 func (n *EventNode) RegisterRoutes() {
