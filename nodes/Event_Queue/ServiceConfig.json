@@ -1,0 +1,96 @@
+{
+  "service": {
+    "name": "event-queue-service",
+    "port": 8002,
+    "host": "0.0.0.0",
+    "environment": "production"
+  },
+  "rabbitmq": {
+    "connection": {
+      "host": "n4-broker.local",
+      "port": 5672,
+      "username": "piranid_user",
+      "password": "secure_password_here",
+      "vhost": "/piranid",
+      "connection_timeout": 30,
+      "heartbeat": 60,
+      "max_retries": 3,
+      "retry_delay": 5
+    },
+    "pool": {
+      "max_connections": 1,
+      "max_channels_per_connection": 3
+    }
+  },
+  "queues": {
+    "auth_queue": {
+      "name": "auth.events",
+      "durable": true,
+      "auto_delete": false,
+      "exclusive": false,
+      "prefetch_count": 3,
+      "worker_count": 1,
+      "priority": 1
+    },
+    "data_queue": {
+      "name": "data.events",
+      "durable": true,
+      "auto_delete": false,
+      "exclusive": false,
+      "prefetch_count": 5,
+      "worker_count": 1,
+      "priority": 2
+    },
+    "logging_queue": {
+      "name": "logging.events",
+      "durable": true,
+      "auto_delete": false,
+      "exclusive": false,
+      "prefetch_count": 3,
+      "worker_count": 1,
+      "priority": 1
+    }
+  },
+  "exchanges": {
+    "main_exchange": {
+      "name": "event.exchange",
+      "type": "topic",
+      "durable": true,
+      "auto_delete": false
+    }
+  },
+  "routing": {
+    "auth_routing_key": "auth.*",
+    "data_routing_key": "data.*",
+    "logging_routing_key": "logging.*"
+  },
+  "workers": {
+    "max_goroutines": 3,
+    "worker_timeout": 300,
+    "retry_attempts": 3,
+    "retry_backoff_seconds": [1, 3, 9]
+  },
+  "grpc": {
+    "enabled": true,
+    "timeout": 30,
+    "max_retries": 2,
+    "endpoints": {
+      "auth_service": "n1-auth.local:9001",
+      "data_service": "n2-storage.local:9002",
+      "logging_service": "n3-logging.local:9003"
+    }
+  },
+  "logging": {
+    "level": "info",
+    "format": "json",
+    "output": "stdout",
+    "enable_queue_logging": false
+  },
+  "pi_optimizations": {
+    "low_memory_mode": true,
+    "reduce_connection_pool": true,
+    "disable_management_plugin": true,
+    "compact_queue_index": true,
+    "lazy_queues": true
+  }
+}

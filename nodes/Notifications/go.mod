@@ -1,12 +1,13 @@
 module github.com/ayden-boyko/Piranid/nodes/Notifications
 
-replace github.com/ayden-boyko/Piranid/internal/node => ../../internal/node
-
 go 1.23.0
 
 toolchain go1.23.4
 
-require github.com/ayden-boyko/Piranid/internal/node v0.0.0-00010101000000-000000000000
+require (
+	github.com/ayden-boyko/Piranid/internal v0.0.0-20250530044858-81be22c53d3e
+	github.com/ayden-boyko/Piranid/internal/node v0.0.0-20250530044858-81be22c53d3e
+)
 
 require (
 	github.com/dustin/go-humanize v1.0.1 // indirect

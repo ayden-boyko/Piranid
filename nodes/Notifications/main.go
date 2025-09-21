@@ -90,7 +90,7 @@ func main() {
 	)
 	// Create a new HTTP server. This server will be responsible for sending
 	// notifications
-	server := &NotificationNode{Node: node.NewNode(), Notifier: client, service_ID: utils.NewServiceID("NOTF")}
+	server := &NotificationNode{Node: node.NewNode(), Notifier: client, service_ID: utils.NewServiceID("NOTI")}
 
 	fmt.Println("Notification Node created...")
 	fmt.Println("Initializing database...")
