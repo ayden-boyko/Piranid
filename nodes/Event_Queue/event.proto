@@ -6,7 +6,6 @@ enum Status {
 }
 
 // TODO FIX THIS PROTOBUF
-
 service Eventer {
     //requests an async event to take place (i.e logging, non TFA, etc)
     //! TFA IS NOT ASYNC DO NOT SEND tO THIS SERVER TFA IS TIME SENSITIVE
