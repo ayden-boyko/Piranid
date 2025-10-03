@@ -14,23 +14,22 @@ import (
 
 	utils "github.com/ayden-boyko/Piranid/internal"
 	node "github.com/ayden-boyko/Piranid/internal/node"
+	"github.com/go-redis/redis"
 	_ "modernc.org/sqlite"
 )
 
 type AuthNode struct {
 	*node.Node
 	service_ID string
+	cache      *redis.Client
 }
 
 func (n *AuthNode) GetServiceID() string { return n.service_ID }
 
 func (n *AuthNode) RegisterRoutes() {
 	// TODO Actual route registration for logging server
-	n.Node.Router.HandleFunc("/auth_test", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("Auth recieved...")
-		fmt.Fprint(w, "recieved")
-	})
-
+	n.Node.Router.HandleFunc("/auth_test", AuthTestHandler)
+	n.Node.Router.HandleFunc("/sign_in", SignInHandler)
 }
 
 func (l *AuthNode) ShutdownDB() error {
@@ -66,6 +65,7 @@ func main() {
 	fmt.Println("Auth Node created...")
 	fmt.Println("Initializing database...")
 
+	// create sqlite DB
 	db, err := sql.Open("sqlite", "./Auth_DB.db")
 	if err != nil {
 		log.Fatalf("Error opening database: %v", err)
@@ -90,6 +90,14 @@ func main() {
 		log.Fatalf("Error executing SQL script: %v, error within %s", err, string(sqlScript))
 	}
 	fmt.Println("Query executed...")
+
+	// Create a new Redis client
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     os.Getenv("REDIS_HOST") + ":" + os.Getenv("REDIS_PORT"),
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+	server.cache = redisClient
 
 	// Run the server in a separate goroutine. This allows the server to run
 	// concurrently with the other code.
