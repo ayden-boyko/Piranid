@@ -20,8 +20,10 @@ type Controller struct {
 	*node.Node
 }
 
+// TODO, dont forget to run pods for graphana and prometheus
+
 func (n *Controller) RegisterRoutes() {
-	// TODO Actual route registration for logging server
+	// TODO Actual route registration for Controller
 	n.Node.Router.HandleFunc("/controller_test", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Controller recieved...")
 		fmt.Fprint(w, "recieved")
