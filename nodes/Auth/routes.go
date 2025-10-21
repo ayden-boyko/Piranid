@@ -2,10 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
-	"github.com/golang-jwt/jwt/v5"
+	models "github.com/ayden-boyko/Piranid/nodes/Auth/models"
 )
 
 func AuthTestHandler(w http.ResponseWriter, r *http.Request) {
@@ -13,62 +14,66 @@ func AuthTestHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "received")
 }
 
-func SignUpHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Sign up received...")
+// Handles requests for user authorization,
+// showing consent screens and issuing authorization grants.
+
+// user hits login page and login page redirects to auth server login page,
+// this handler returns the info for the user agent (new page with consent screen)
+func AuthHandler(w http.ResponseWriter, r *http.Request) error {
+	var req models.ConsentPage
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return errors.New("error decoding request body")
+	}
+	fmt.Println("Auth received...")
 	fmt.Fprint(w, "received")
+
+	return nil
 }
 
-func SignInHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Sign in received...")
-	fmt.Fprint(w, "received")
+// Once the user signs in on the consent screen, the info is sent here where the auth server
+// can verify the user information, if correct,
+// the auth server responds to the client throught the callback (i.e redirect url) with the auth code
+func LoginHandler(w http.ResponseWriter, r *http.Request) error {
+	var req models.AuthRequest
 
-	// TODO, isnt password supposed to be hashed?
-	request := struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}{}
-
-	err := json.NewDecoder(r.Body).Decode(&request)
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return errors.New("error decoding request body")
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"email":    request.Email,
-		"password": request.Password,
-	})
-	tokenString, err := token.SignedString([]byte("secret"))
+	fmt.Println("Login received...")
+	fmt.Fprint(w, "received")
+
+	return nil
+}
+
+// once the client gets auth code,
+// it makes a call to the auth server to exchange the code for an access token
+func TokenHandler(w http.ResponseWriter, r *http.Request) error {
+	var req models.AuthExchange
+
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return errors.New("error decoding request body")
 	}
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(`{"token": "` + tokenString + `"}`))
+	fmt.Println("Token received...")
+	fmt.Fprint(w, "received")
+	return nil
 }
 
-func SignOutHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Sign out received...")
+// Allows a client to obtain profile info for a user with a valid access token.
+func UserInfoHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("User info received...")
 	fmt.Fprint(w, "received")
 }
 
-func ChangePasswordHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Change password received...")
-	fmt.Fprint(w, "received")
-}
-
-func ChangeUserNameHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Change email received...")
-	fmt.Fprint(w, "received")
-}
-
-func ChangeEmailHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Change email received...")
-	fmt.Fprint(w, "received")
-}
-
-func DeleteAccountHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Delete account received...")
+// Handles centralized log out for sessions.
+func LogoutHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Logout received...")
 	fmt.Fprint(w, "received")
 }

@@ -26,10 +26,30 @@ type AuthNode struct {
 
 func (n *AuthNode) GetServiceID() string { return n.service_ID }
 
+// TODO 2FA
+
 func (n *AuthNode) RegisterRoutes() {
-	// TODO Actual route registration for logging server
 	n.Node.Router.HandleFunc("/auth_test", AuthTestHandler)
-	n.Node.Router.HandleFunc("/sign_in", SignInHandler)
+	n.Node.Router.HandleFunc("/auth", func(w http.ResponseWriter, r *http.Request) {
+		if err := AuthHandler(w, r); err != nil {
+			log.Printf("Error in Auth handler: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+	})
+	n.Node.Router.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+		if err := LoginHandler(w, r); err != nil {
+			log.Printf("Error in Login handler: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+	})
+	n.Node.Router.HandleFunc("/token", func(w http.ResponseWriter, r *http.Request) {
+		if err := TokenHandler(w, r); err != nil {
+			log.Printf("Error in Token handler: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+	})
+	n.Node.Router.HandleFunc("/logout", LogoutHandler)
+	n.Node.Router.HandleFunc("/userinfo", UserInfoHandler)
 }
 
 func (l *AuthNode) ShutdownDB() error {
