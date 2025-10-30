@@ -10,3 +10,7 @@ type Entry struct {
 func (e Entry) GetID() uint64 {
 	return e.Id
 }
+
+func (e Entry) GetDateCreated() time.Time {
+	return e.Date_Created
+}

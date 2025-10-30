@@ -9,7 +9,8 @@ import (
 	"net/http"
 
 	data_manager "Piranid/pkg/DataManager"
-	models "Piranid/pkg/models"
+
+	model "github.com/ayden-boyko/Piranid/nodes/Auth/models"
 
 	transactions "github.com/ayden-boyko/Piranid/nodes/Auth/transactions"
 )
@@ -19,7 +20,7 @@ func AuthTestHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "received")
 }
 
-func SignUpHandler(w http.ResponseWriter, r *http.Request, dm *data_manager.DataManagerImpl[models.Entry]) error {
+func SignUpHandler(w http.ResponseWriter, r *http.Request, dm *data_manager.DataManagerImpl[model.AuthEntry]) error {
 	fmt.Println("Sign up received...")
 	fmt.Fprint(w, "received")
 	var req transactions.SignUpRequest
@@ -27,6 +28,11 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, dm *data_manager.Data
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return err
+	}
+
+	if err := dm.PushData(model.AuthEntry{Username: req.Username, HashedPassword: req.HashedPassword}, dm.InsertEntry); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
 

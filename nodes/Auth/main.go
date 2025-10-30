@@ -15,7 +15,8 @@ import (
 	node "Piranid/node"
 	utils "Piranid/pkg"
 	data_manager "Piranid/pkg/DataManager"
-	models "Piranid/pkg/models"
+
+	model "github.com/ayden-boyko/Piranid/nodes/Auth/models"
 
 	"github.com/go-redis/redis"
 	_ "modernc.org/sqlite"
@@ -37,11 +38,17 @@ func (n *AuthNode) RegisterRoutes() {
 		log.Printf("Error, expected n.Node.GetDB() to be of type *sql.DB, but got %T", n.Node.GetDB())
 		return
 	}
-	manager, err := data_manager.NewDataManager[models.Entry](db)
+	credentials_manager, err := data_manager.NewDataManager[model.AuthEntry](db, "credentials")
 	if err != nil {
 		log.Printf("Error creating manager: %v", err)
 	}
-	log.Printf("Manager created, %v", manager)
+	log.Printf("Manager created, %v", credentials_manager)
+
+	auth_code_manager, err := data_manager.NewDataManager[model.AuthCodeEntry](db, "auth_codes")
+	if err != nil {
+		log.Printf("Error creating manager: %v", err)
+	}
+	log.Printf("Manager created, %v", auth_code_manager)
 
 	n.Node.Router.HandleFunc("/auth_test", AuthTestHandler)
 	n.Node.Router.HandleFunc("/auth", func(w http.ResponseWriter, r *http.Request) {
@@ -64,7 +71,7 @@ func (n *AuthNode) RegisterRoutes() {
 	})
 
 	n.Node.Router.HandleFunc("/Sign_up", func(w http.ResponseWriter, r *http.Request) {
-		if err := SignUpHandler(w, r, manager); err != nil {
+		if err := SignUpHandler(w, r, credentials_manager); err != nil {
 			log.Print("Error in SignUp handler: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
