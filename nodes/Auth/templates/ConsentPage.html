@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>OAuth Consent Page</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        background-color: #f2f2f2;
+      }
+      h1 {
+        color: #007bff;
+      }
+      p {
+        font-size: 1.2em;
+        color: #555;
+      }
+      form {
+        background-color: #fff;
+        border: 1px solid #ccc;
+        padding: 20px;
+      }
+      input[type="submit"] {
+        background-color: #007bff;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>OAuth Consent Page</h1>
+    <p>Do you want to allow {{ .ClientName }} to access your account?</p>
+    <form action="/login" method="post">
+      <label for="username">Username:</label><br />
+      <input type="text" name="username" id="username" required /><br />
+      <label for="useremail">Email:</label><br />
+      <input type="email" name="useremail" id="useremail" required /><br />
+      <label for="password">Password:</label><br />
+      <input type="password" name="password" id="password" required /><br />
+      <input
+        type="hidden"
+        name="client_id"
+        id="client-id"
+        value="{{ .ClientID }}"
+      />
+      <input type="hidden" name="redirect" value="{{ .Redirect }}" />
+      <input type="hidden" name="response_type" value="{{ .ResponseType }}" />
+      <input type="submit" value="Allow" />
+      <input type="submit" value="Deny" />
+    </form>
+  </body>
+</html>

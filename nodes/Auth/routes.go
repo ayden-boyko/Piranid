@@ -1,9 +1,11 @@
 package main
 
 import (
+	"embed"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html/template"
 	"net/http"
 
 	models "github.com/ayden-boyko/Piranid/nodes/Auth/models"
@@ -14,13 +16,27 @@ func AuthTestHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "received")
 }
 
+func SignUpHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Sign up received...")
+	fmt.Fprint(w, "received")
+	var req models.SignUpRequest
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+}
+
 // Handles requests for user authorization,
 // showing consent screens and issuing authorization grants.
 
 // user hits login page and login page redirects to auth server login page,
-// this handler returns the info for the user agent (new page with consent screen)
+// once user enters info the auth code is sent to the client
 func AuthHandler(w http.ResponseWriter, r *http.Request) error {
 	var req models.ConsentPage
+	var templatesFS embed.FS
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -29,6 +45,17 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 	fmt.Println("Auth received...")
 	fmt.Fprint(w, "received")
+
+	tmpl, err := template.ParseFS(templatesFS, "templates/ConsentPage.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return errors.New("error parsing template")
+	}
+	tmpl.Execute(w, req)
+	if err != nil {
+		http.Error(w, "Template execution error", http.StatusInternalServerError)
+		return err
+	}
 
 	return nil
 }

@@ -11,8 +11,9 @@ import (
 	"syscall"
 	"time"
 
-	utils "github.com/ayden-boyko/Piranid/internal"
-	node "github.com/ayden-boyko/Piranid/internal/node"
+	node "Piranid/node"
+	utils "Piranid/pkg"
+
 	"github.com/go-redis/redis"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api"

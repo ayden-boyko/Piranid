@@ -1,4 +1,4 @@
-module github.com/ayden-boyko/Piranid/internal
+module Piranid/pkg
 
 go 1.23.0
 

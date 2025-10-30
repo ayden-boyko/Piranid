@@ -12,8 +12,9 @@ import (
 	"syscall"
 	"time"
 
-	utils "github.com/ayden-boyko/Piranid/internal"
-	node "github.com/ayden-boyko/Piranid/internal/node"
+	node "Piranid/node"
+	utils "Piranid/pkg"
+
 	"github.com/go-redis/redis"
 	_ "modernc.org/sqlite"
 )
@@ -48,6 +49,14 @@ func (n *AuthNode) RegisterRoutes() {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
 	})
+
+	n.Node.Router.HandleFunc("/Sign_up", func(w http.ResponseWriter, r *http.Request) {
+		if err := SignUpHandler(w, r); err != nil {
+			log.Print("Error in SignUp handler: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+	})
+
 	n.Node.Router.HandleFunc("/logout", LogoutHandler)
 	n.Node.Router.HandleFunc("/userinfo", UserInfoHandler)
 }

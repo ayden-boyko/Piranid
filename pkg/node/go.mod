@@ -1,4 +1,4 @@
-module github.com/ayden-boyko/Piranid/internal/node
+module Piranid/node
 
 go 1.23
 

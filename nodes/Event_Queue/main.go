@@ -12,8 +12,9 @@ import (
 	"syscall"
 	"time"
 
-	utils "github.com/ayden-boyko/Piranid/internal"
-	node "github.com/ayden-boyko/Piranid/internal/node"
+	node "Piranid/node"
+	utils "Piranid/pkg"
+
 	_ "modernc.org/sqlite"
 )
 
