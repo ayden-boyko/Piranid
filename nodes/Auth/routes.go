@@ -8,7 +8,10 @@ import (
 	"html/template"
 	"net/http"
 
-	models "github.com/ayden-boyko/Piranid/nodes/Auth/models"
+	data_manager "Piranid/pkg/DataManager"
+	models "Piranid/pkg/models"
+
+	transactions "github.com/ayden-boyko/Piranid/nodes/Auth/transactions"
 )
 
 func AuthTestHandler(w http.ResponseWriter, r *http.Request) {
@@ -16,17 +19,18 @@ func AuthTestHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "received")
 }
 
-func SignUpHandler(w http.ResponseWriter, r *http.Request) {
+func SignUpHandler(w http.ResponseWriter, r *http.Request, dm *data_manager.DataManagerImpl[models.Entry]) error {
 	fmt.Println("Sign up received...")
 	fmt.Fprint(w, "received")
-	var req models.SignUpRequest
+	var req transactions.SignUpRequest
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return err
 	}
 
+	return nil
 }
 
 // Handles requests for user authorization,
@@ -35,7 +39,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request) {
 // user hits login page and login page redirects to auth server login page,
 // once user enters info the auth code is sent to the client
 func AuthHandler(w http.ResponseWriter, r *http.Request) error {
-	var req models.ConsentPage
+	var req transactions.ConsentPage
 	var templatesFS embed.FS
 
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -64,7 +68,7 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) error {
 // can verify the user information, if correct,
 // the auth server responds to the client throught the callback (i.e redirect url) with the auth code
 func LoginHandler(w http.ResponseWriter, r *http.Request) error {
-	var req models.AuthRequest
+	var req transactions.AuthRequest
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -81,7 +85,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) error {
 // once the client gets auth code,
 // it makes a call to the auth server to exchange the code for an access token
 func TokenHandler(w http.ResponseWriter, r *http.Request) error {
-	var req models.AuthExchange
+	var req transactions.AuthExchange
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {

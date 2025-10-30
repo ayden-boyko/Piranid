@@ -4,120 +4,61 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"strings"
-
-	"Piranid/pkg/models"
 )
 
-type DataManagerImpl struct {
+// Define an interface that all entry types must implement
+type Entry interface {
+	GetID() uint64
+	// Add other common methods if needed
+}
+
+type DataManagerImpl[T Entry] struct {
 	db *sql.DB
 }
 
-func NewDataManager(db *sql.DB) (*DataManagerImpl, error) {
+func NewDataManager[T Entry](db *sql.DB) (*DataManagerImpl[T], error) {
 	if db == nil {
 		return nil, errors.New("database connection is nil")
 	}
 	if err := db.Ping(); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
-	return &DataManagerImpl{db: db}, nil
+	return &DataManagerImpl[T]{db: db}, nil
 }
 
-func (d *DataManagerImpl) GetEntry(id uint64) (string, error) {
-
+func (d *DataManagerImpl[T]) GetEntry(id uint64, scanner func(*sql.Rows) (T, error)) (T, error) {
+	var zero T
 	if err := d.db.Ping(); err != nil {
-		return "database connection lost", fmt.Errorf("database connection lost: %w", err)
+		return zero, fmt.Errorf("database connection lost: %w", err)
 	}
 
-	// begins a transaction
-	tx, err := d.db.Begin()
+	rows, err := d.db.Query("SELECT * FROM entries WHERE id = ?", id)
 	if err != nil {
-		return "", fmt.Errorf("error starting transaction: %w", err)
+		return zero, err
 	}
-
-	// rollback the transaction if an error occurs
-	defer tx.Rollback()
-
-	rows, err := tx.Query("SELECT * FROM entries WHERE id = ?", id)
-	if err != nil {
-		return "Rows not found", err
-	}
-
 	defer rows.Close()
 
 	if rows.Next() {
-		var entry models.Entry
-		if err := rows.Scan(&entry.Id, &entry.Base62Id, &entry.LongUrl, &entry.Date_Created); err != nil {
-			return "error scanning", err
-		}
-		return entry.LongUrl, nil
+		return scanner(rows)
 	}
-	// commit the transaction
-	if err := tx.Commit(); err != nil {
-		return "", fmt.Errorf("error committing transaction: %w", err)
-	}
-	return "No entry found", nil
+
+	return zero, sql.ErrNoRows
 }
 
-func (d *DataManagerImpl) PushData(entry models.Entry) (string, error) {
-
+func (d *DataManagerImpl[T]) PushData(entry T, inserter func(*sql.Tx, T) error) error {
 	if err := d.db.Ping(); err != nil {
-		return "", fmt.Errorf("database connection lost: %w", err)
+		return fmt.Errorf("database connection lost: %w", err)
 	}
 
-	// begins a transaction
 	tx, err := d.db.Begin()
 	if err != nil {
-		return "", fmt.Errorf("error starting transaction: %w", err)
+		return fmt.Errorf("error starting transaction: %w", err)
 	}
-
-	// rollback the transaction if an error occurs
 	defer tx.Rollback()
 
-	// checks if the entry already exists
-	exists := ""
-	rows := tx.QueryRow("SELECT Base62Id FROM entries WHERE LongUrl = ? LIMIT 1", entry.LongUrl)
-	if err = rows.Scan(&exists); err != nil && err != sql.ErrNoRows {
-		return "", fmt.Errorf("error querying database: %w", err)
+	if err := inserter(tx, entry); err != nil {
+		return err
 	}
 
-	// if the entry already exists
-	if exists != "" {
-		fmt.Println("Entry already exists: ", exists)
-		// return the existing entry
-		return exists, errors.New("entry already exists")
-	}
-
-	//before adding the long url, check if it has https or http
-	if !strings.HasPrefix(entry.LongUrl, "http") {
-		//add https if it doesn't
-		entry.LongUrl = "https://" + entry.LongUrl
-	}
-
-	_, err = tx.Exec("INSERT INTO entries (id, base62Id, LongUrl, date_created) VALUES (?, ?, ?, ?)",
-		entry.Id, entry.Base62Id, entry.LongUrl, entry.Date_Created)
-	if err != nil {
-		return "", fmt.Errorf("error executing database insert: %w", err)
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		fmt.Println("error committing transaction: ", err)
-		return "", fmt.Errorf("error committing transaction: %w", err)
-	}
-
-	// commit the transaction
-	return "", err
-}
-
-func (d *DataManagerImpl) Close() {
-	d.db.Close()
-}
-
-func (d *DataManagerImpl) Ping() error {
-	return d.db.Ping()
-}
-
-func (d *DataManagerImpl) Stats() sql.DBStats {
-	return d.db.Stats()
+	return tx.Commit()
 }

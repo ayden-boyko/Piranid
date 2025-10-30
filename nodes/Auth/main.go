@@ -14,6 +14,8 @@ import (
 
 	node "Piranid/node"
 	utils "Piranid/pkg"
+	data_manager "Piranid/pkg/DataManager"
+	models "Piranid/pkg/models"
 
 	"github.com/go-redis/redis"
 	_ "modernc.org/sqlite"
@@ -30,6 +32,17 @@ func (n *AuthNode) GetServiceID() string { return n.service_ID }
 // TODO 2FA
 
 func (n *AuthNode) RegisterRoutes() {
+	db, ok := n.Node.GetDB().(*sql.DB)
+	if !ok {
+		log.Printf("Error, expected n.Node.GetDB() to be of type *sql.DB, but got %T", n.Node.GetDB())
+		return
+	}
+	manager, err := data_manager.NewDataManager[models.Entry](db)
+	if err != nil {
+		log.Printf("Error creating manager: %v", err)
+	}
+	log.Printf("Manager created, %v", manager)
+
 	n.Node.Router.HandleFunc("/auth_test", AuthTestHandler)
 	n.Node.Router.HandleFunc("/auth", func(w http.ResponseWriter, r *http.Request) {
 		if err := AuthHandler(w, r); err != nil {
@@ -51,7 +64,7 @@ func (n *AuthNode) RegisterRoutes() {
 	})
 
 	n.Node.Router.HandleFunc("/Sign_up", func(w http.ResponseWriter, r *http.Request) {
-		if err := SignUpHandler(w, r); err != nil {
+		if err := SignUpHandler(w, r, manager); err != nil {
 			log.Print("Error in SignUp handler: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
