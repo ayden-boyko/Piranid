@@ -67,7 +67,7 @@ func (n *AuthNode) RegisterRoutes() {
 		}
 	})
 	n.Node.Router.HandleFunc("/token", func(w http.ResponseWriter, r *http.Request) {
-		if err := TokenHandler(w, r); err != nil {
+		if err := TokenHandler(w, r, credentials_manager, auth_code_manager); err != nil {
 			log.Printf("Error in Token handler: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}

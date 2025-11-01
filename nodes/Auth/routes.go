@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"time"
 
 	utils "github.com/ayden-boyko/Piranid/nodes/Auth/utils"
 
@@ -136,8 +137,10 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, ae *data_manager.DataM
 
 // once the client gets auth code,
 // it makes a call to the auth server to exchange the code for an access token
-func TokenHandler(w http.ResponseWriter, r *http.Request) error {
+func TokenHandler(w http.ResponseWriter, r *http.Request, ae *data_manager.DataManagerImpl[model.AuthEntry], ace *data_manager.DataManagerImpl[model.AuthCodeEntry]) error {
 	var req transactions.AuthExchange
+
+	var entry model.AuthEntry
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -148,14 +151,50 @@ func TokenHandler(w http.ResponseWriter, r *http.Request) error {
 	fmt.Fprint(w, "received")
 
 	// check if auth code is valid
+	auth_code, err := ace.GetEntry("authcode", req.Authcode, utils.AuthCodeScanner)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return errors.New("error decoding request body")
+	}
+
+	if auth_code == (model.AuthCodeEntry{}) { // entry is empty, auth code doesnt exist
+		http.Error(w, "Invalid auth code", http.StatusBadRequest)
+		return errors.New("invalid auth code")
+	}
+	// check if auth code is expired
+	if auth_code.Expires < time.Now().Unix() {
+		http.Error(w, "Auth code expired", http.StatusBadRequest)
+		return errors.New("auth code expired")
+	}
+
+	// get user auth_entry
+	entry, err = ae.GetEntry("clientid", req.ClientId, utils.CredentialsScanner)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return errors.New("error decoding request body")
+	}
 
 	// check if redirect url is valid
+	if entry.RedirectURI != req.RedirectURI {
+		http.Error(w, "Invalid redirect url", http.StatusBadRequest)
+		return errors.New("invalid redirect url")
+	}
 
 	// check if client secret in db matches based on client id
+	if entry.ClientSecret != req.ClientSecret {
+		http.Error(w, "Invalid client secret", http.StatusBadRequest)
+		return errors.New("invalid client secret")
+	}
 
 	// if auth code and client secret valid
+	var res transactions.AuthToken
 
+	// TODO, create dedicated auth & refresh token methods
 	// return access token JWT
+	res.AccessToken, _, _ = utils.CreateToken(entry.ClientId)
+	res.RefreshToken, _, _ = utils.CreateToken(entry.ClientId)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(res)
 
 	return nil
 }
