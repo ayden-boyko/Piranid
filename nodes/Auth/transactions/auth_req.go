@@ -5,6 +5,6 @@ type AuthRequest struct {
 	Useremail    string `json:"useremail"`
 	Password     string `json:"password"`
 	ClientId     string `json:"client_id"`
-	Redirect     string `json:"redirect"`
+	RedirectURI  string `json:"redirect_uri"`
 	Responsetype string `json:"response_type"`
 }

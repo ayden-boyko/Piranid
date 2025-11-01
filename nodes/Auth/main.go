@@ -32,6 +32,9 @@ func (n *AuthNode) GetServiceID() string { return n.service_ID }
 
 // TODO 2FA
 
+// todo, full auth lifecycle, maybe add new methods to data_manager
+// https://claude.ai/chat/88eaf1e7-09f4-49d3-9132-c7464655d584
+
 func (n *AuthNode) RegisterRoutes() {
 	db, ok := n.Node.GetDB().(*sql.DB)
 	if !ok {
@@ -58,7 +61,7 @@ func (n *AuthNode) RegisterRoutes() {
 		}
 	})
 	n.Node.Router.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
-		if err := LoginHandler(w, r); err != nil {
+		if err := LoginHandler(w, r, credentials_manager); err != nil {
 			log.Printf("Error in Login handler: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}

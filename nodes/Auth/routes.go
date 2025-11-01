@@ -8,6 +8,8 @@ import (
 	"html/template"
 	"net/http"
 
+	utils "github.com/ayden-boyko/Piranid/nodes/Auth/utils"
+
 	data_manager "Piranid/pkg/DataManager"
 
 	model "github.com/ayden-boyko/Piranid/nodes/Auth/models"
@@ -31,10 +33,19 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, dm *data_manager.Data
 		return err
 	}
 
-	if err := dm.PushData(model.AuthEntry{Username: req.Username, HashedPassword: req.HashedPassword}, dm.InsertEntry); err != nil {
+	if err := dm.PushData(
+		model.AuthEntry{Username: req.Username,
+			HashedPassword: req.HashedPassword,
+			UserEmail:      req.Useremail,
+			ClientSecret:   req.ClientSecret,
+			ClientId:       req.ClientId,
+			ServiceId:      req.ServiceId,
+			RedirectURI:    req.RedirectURI}, utils.CredentialsInserter); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
+
+	w.WriteHeader(http.StatusOK)
 
 	return nil
 }
@@ -61,7 +72,7 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) error {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return errors.New("error parsing template")
 	}
-	tmpl.Execute(w, req)
+	err = tmpl.Execute(w, req)
 	if err != nil {
 		http.Error(w, "Template execution error", http.StatusInternalServerError)
 		return err
@@ -73,7 +84,7 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) error {
 // Once the user signs in on the consent screen, the info is sent here where the auth server
 // can verify the user information, if correct,
 // the auth server responds to the client throught the callback (i.e redirect url) with the auth code
-func LoginHandler(w http.ResponseWriter, r *http.Request) error {
+func LoginHandler(w http.ResponseWriter, r *http.Request, dm *data_manager.DataManagerImpl[model.AuthEntry]) error {
 	var req transactions.AuthRequest
 
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -82,8 +93,32 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) error {
 		return errors.New("error decoding request body")
 	}
 
+	// check if the user exists in the database
+	entry, err := dm.GetEntry("username", req.Username, utils.CredentialsScanner)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return errors.New("error decoding request body")
+	}
+
+	if entry == (model.AuthEntry{}) { // entry is empty, user doesnt exist
+		http.Error(w, "User does not exist", http.StatusBadRequest)
+		return errors.New("user does not exist")
+	}
+
+	//check if redirect url is valid
+	if entry.RedirectURI != req.RedirectURI {
+		http.Error(w, "Invalid redirect url", http.StatusBadRequest)
+		return errors.New("invalid redirect url")
+	}
+
 	fmt.Println("Login received...")
 	fmt.Fprint(w, "received")
+
+	// create auth code JWT
+
+	// add auth code to database
+
+	// return auth code
 
 	return nil
 }
@@ -100,6 +135,17 @@ func TokenHandler(w http.ResponseWriter, r *http.Request) error {
 	}
 	fmt.Println("Token received...")
 	fmt.Fprint(w, "received")
+
+	// check if auth code is valid
+
+	// check if redirect url is valid
+
+	// check if client secret in db matches based on client id
+
+	// if auth code and client secret valid
+
+	// return access token JWT
+
 	return nil
 }
 

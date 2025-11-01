@@ -34,13 +34,13 @@ func NewDataManager[T Entry](db *sql.DB, tableName string) (*DataManagerImpl[T],
 	}, nil
 }
 
-func (d *DataManagerImpl[T]) GetEntry(id uint64, scanner func(*sql.Rows) (T, error)) (T, error) {
+func (d *DataManagerImpl[T]) GetEntry(key string, id string, scanner func(*sql.Rows) (T, error)) (T, error) {
 	var zero T
 	if err := d.db.Ping(); err != nil {
 		return zero, fmt.Errorf("database connection lost: %w", err)
 	}
 
-	rows, err := d.db.Query("SELECT * FROM %s WHERE id = %s", d.tableName, id)
+	rows, err := d.db.Query("SELECT * FROM %s WHERE %s = %d", d.tableName, key, id)
 	if err != nil {
 		return zero, err
 	}
@@ -51,11 +51,6 @@ func (d *DataManagerImpl[T]) GetEntry(id uint64, scanner func(*sql.Rows) (T, err
 	}
 
 	return zero, sql.ErrNoRows
-}
-
-func (d *DataManagerImpl[T]) InsertEntry(tx *sql.Tx, entry T) error {
-	_, err := tx.Exec("INSERT INTO %s (id, date_created) VALUES (%s, %s)", d.tableName, entry.GetID(), entry.GetDateCreated())
-	return err
 }
 
 func (d *DataManagerImpl[T]) PushData(entry T, inserter func(*sql.Tx, T) error) error {

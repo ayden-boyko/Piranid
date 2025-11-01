@@ -1,6 +1,6 @@
 package internal
 
 type AuthResponse struct {
-	Authcode string `json:"authcode"`
-	Redirect string `json:"redirect"`
+	Authcode    string `json:"authcode"`
+	RedirectURI string `json:"redirect_uri"`
 }

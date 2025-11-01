@@ -5,5 +5,5 @@ type AuthExchange struct {
 	Responsetype string `json:"response_type"`
 	ClientId     string `json:"client_id"`
 	ClientSecret string `json:"client_secret"`
-	Redirect     string `json:"redirect"`
+	RedirectURI  string `json:"redirect_uri"`
 }

@@ -13,6 +13,7 @@ type AuthEntry struct {
 	UserEmail          string `json:"useremail"`
 	HashedPassword     string `json:"hashed_password"`
 	ServiceId          string `json:"service_id"`
+	RedirectURI        string `json:"redirect_uri"`
 }
 
 func (e AuthEntry) GetClientId() string {
