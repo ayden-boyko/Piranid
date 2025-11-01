@@ -84,7 +84,7 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) error {
 // Once the user signs in on the consent screen, the info is sent here where the auth server
 // can verify the user information, if correct,
 // the auth server responds to the client throught the callback (i.e redirect url) with the auth code
-func LoginHandler(w http.ResponseWriter, r *http.Request, dm *data_manager.DataManagerImpl[model.AuthEntry]) error {
+func LoginHandler(w http.ResponseWriter, r *http.Request, ae *data_manager.DataManagerImpl[model.AuthEntry], ace *data_manager.DataManagerImpl[model.AuthCodeEntry]) error {
 	var req transactions.AuthRequest
 
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -94,7 +94,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, dm *data_manager.DataM
 	}
 
 	// check if the user exists in the database
-	entry, err := dm.GetEntry("username", req.Username, utils.CredentialsScanner)
+	entry, err := ae.GetEntry("username", req.Username, utils.CredentialsScanner)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return errors.New("error decoding request body")
@@ -115,10 +115,21 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, dm *data_manager.DataM
 	fmt.Fprint(w, "received")
 
 	// create auth code JWT
+	token, time, err := utils.CreateToken(entry.ClientId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return errors.New("error creating token")
+	}
 
 	// add auth code to database
+	if err := ace.PushData(model.AuthCodeEntry{AuthCode: token, Expires: time}, utils.AuthCodeInserter); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return errors.New("error adding auth code to database")
+	}
 
 	// return auth code
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(token)
 
 	return nil
 }
