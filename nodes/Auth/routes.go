@@ -18,12 +18,12 @@ import (
 	transactions "github.com/ayden-boyko/Piranid/nodes/Auth/transactions"
 )
 
-func AuthTestHandler(w http.ResponseWriter, r *http.Request) {
+func (n *AuthNode) AuthTestHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Auth received...")
 	fmt.Fprint(w, "received")
 }
 
-func SignUpHandler(w http.ResponseWriter, r *http.Request, dm *data_manager.DataManagerImpl[model.AuthEntry]) error {
+func (n *AuthNode) SignUpHandler(w http.ResponseWriter, r *http.Request, dm *data_manager.DataManagerImpl[model.AuthEntry]) error {
 	fmt.Println("Sign up received...")
 	fmt.Fprint(w, "received")
 	var req transactions.SignUpRequest
@@ -56,7 +56,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, dm *data_manager.Data
 
 // user hits login page and login page redirects to auth server login page,
 // once user enters info the auth code is sent to the client
-func AuthHandler(w http.ResponseWriter, r *http.Request) error {
+func (n *AuthNode) AuthHandler(w http.ResponseWriter, r *http.Request) error {
 	var req transactions.ConsentPage
 	var templatesFS embed.FS
 
@@ -85,7 +85,7 @@ func AuthHandler(w http.ResponseWriter, r *http.Request) error {
 // Once the user signs in on the consent screen, the info is sent here where the auth server
 // can verify the user information, if correct,
 // the auth server responds to the client throught the callback (i.e redirect url) with the auth code
-func LoginHandler(w http.ResponseWriter, r *http.Request, ae *data_manager.DataManagerImpl[model.AuthEntry], ace *data_manager.DataManagerImpl[model.AuthCodeEntry]) error {
+func (n *AuthNode) LoginHandler(w http.ResponseWriter, r *http.Request, ae *data_manager.DataManagerImpl[model.AuthEntry], ace *data_manager.DataManagerImpl[model.AuthCodeEntry]) error {
 	var req transactions.AuthRequest
 
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -137,7 +137,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, ae *data_manager.DataM
 
 // once the client gets auth code,
 // it makes a call to the auth server to exchange the code for an access token
-func TokenHandler(w http.ResponseWriter, r *http.Request, ae *data_manager.DataManagerImpl[model.AuthEntry], ace *data_manager.DataManagerImpl[model.AuthCodeEntry]) error {
+func (n *AuthNode) TokenHandler(w http.ResponseWriter, r *http.Request, ae *data_manager.DataManagerImpl[model.AuthEntry], ace *data_manager.DataManagerImpl[model.AuthCodeEntry]) error {
 	var req transactions.AuthExchange
 
 	var entry model.AuthEntry
@@ -200,13 +200,13 @@ func TokenHandler(w http.ResponseWriter, r *http.Request, ae *data_manager.DataM
 }
 
 // Allows a client to obtain profile info for a user with a valid access token.
-func UserInfoHandler(w http.ResponseWriter, r *http.Request) {
+func (n *AuthNode) UserInfoHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("User info received...")
 	fmt.Fprint(w, "received")
 }
 
 // Handles centralized log out for sessions.
-func LogoutHandler(w http.ResponseWriter, r *http.Request) {
+func (n *AuthNode) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Logout received...")
 	fmt.Fprint(w, "received")
 }
