@@ -24,23 +24,13 @@ import (
 
 type AuthNode struct {
 	*node.Node
-	service_ID string
-	cache      *redis.Client
+	Service_ID string
+	Cache      *redis.Client
 }
 
-type AuthService interface {
-	AuthTestHandler()
-	SignUpHandler() error
-	AuthHandler() error
-	LoginHandler() error
-	TokenHandler() error
-	UserInfoHandler() (string, error)
-	LogoutHandler() error
-}
+func (n *AuthNode) GetServiceID() string { return n.Service_ID }
 
-func (n *AuthNode) GetServiceID() string { return n.service_ID }
-
-// TODO Cache, testing
+// TODO Caching
 
 func (n *AuthNode) RegisterRoutes() {
 	db, ok := n.Node.GetDB().(*sql.DB)
@@ -82,7 +72,7 @@ func (n *AuthNode) RegisterRoutes() {
 
 	n.Node.Router.HandleFunc("/Sign_up", func(w http.ResponseWriter, r *http.Request) {
 		if err := n.SignUpHandler(w, r, credentials_manager); err != nil {
-			log.Print("Error in SignUp handler: %v", err)
+			log.Printf("Error in SignUp handler: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
 	})
@@ -119,7 +109,7 @@ func (n *AuthNode) SafeShutdown(ctx context.Context) error {
 func main() {
 	// Create a new HTTP server. This server will be responsible for sending
 	// notifications
-	server := &AuthNode{Node: node.NewNode(), service_ID: utils.NewServiceID("AUTH")}
+	server := &AuthNode{Node: node.NewNode(), Service_ID: utils.NewServiceID("AUTH")}
 
 	fmt.Println("Auth Node created...")
 	fmt.Println("Initializing database...")
@@ -156,7 +146,7 @@ func main() {
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
-	server.cache = redisClient
+	server.Cache = redisClient
 
 	// Run the server in a separate goroutine. This allows the server to run
 	// concurrently with the other code.
