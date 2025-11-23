@@ -14,102 +14,18 @@ import (
 
 	node "Piranid/node"
 	utils "Piranid/pkg"
-	data_manager "Piranid/pkg/DataManager"
 
-	model "github.com/ayden-boyko/Piranid/nodes/Auth/models"
+	core "github.com/ayden-boyko/Piranid/nodes/Auth/authcore"
 
 	"github.com/go-redis/redis"
 	_ "modernc.org/sqlite"
 )
 
-type AuthNode struct {
-	*node.Node
-	Service_ID string
-	Cache      *redis.Client
-}
-
-func (n *AuthNode) GetServiceID() string { return n.Service_ID }
-
-// TODO Caching
-
-func (n *AuthNode) RegisterRoutes() {
-	db, ok := n.Node.GetDB().(*sql.DB)
-	if !ok {
-		log.Printf("Error, expected n.Node.GetDB() to be of type *sql.DB, but got %T", n.Node.GetDB())
-		return
-	}
-	credentials_manager, err := data_manager.NewDataManager[model.AuthEntry](db, "credentials")
-	if err != nil {
-		log.Printf("Error creating manager: %v", err)
-	}
-	log.Printf("Manager created, %v", credentials_manager)
-
-	auth_code_manager, err := data_manager.NewDataManager[model.AuthCodeEntry](db, "auth_codes")
-	if err != nil {
-		log.Printf("Error creating manager: %v", err)
-	}
-	log.Printf("Manager created, %v", auth_code_manager)
-
-	n.Node.Router.HandleFunc("/auth_test", n.AuthTestHandler)
-	n.Node.Router.HandleFunc("/auth", func(w http.ResponseWriter, r *http.Request) {
-		if err := n.AuthHandler(w, r); err != nil {
-			log.Printf("Error in Auth handler: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		}
-	})
-	n.Node.Router.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
-		if err := n.LoginHandler(w, r, credentials_manager, auth_code_manager); err != nil {
-			log.Printf("Error in Login handler: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		}
-	})
-	n.Node.Router.HandleFunc("/token", func(w http.ResponseWriter, r *http.Request) {
-		if err := n.TokenHandler(w, r, credentials_manager, auth_code_manager); err != nil {
-			log.Printf("Error in Token handler: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		}
-	})
-
-	n.Node.Router.HandleFunc("/Sign_up", func(w http.ResponseWriter, r *http.Request) {
-		if err := n.SignUpHandler(w, r, credentials_manager); err != nil {
-			log.Printf("Error in SignUp handler: %v", err)
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		}
-	})
-
-	n.Node.Router.HandleFunc("/logout", n.LogoutHandler)
-	n.Node.Router.HandleFunc("/userinfo", n.UserInfoHandler)
-}
-
-func (l *AuthNode) ShutdownDB() error {
-	db := l.Node.GetDB()
-	if sqliteDB, ok := db.(*sql.DB); ok {
-		sqliteDB.Close()
-		fmt.Println("Database closed...")
-		return nil
-	}
-	return errors.New("database is not *sql.DB, is type " + fmt.Sprintf("%T", db))
-}
-
-// SafeShutdown is a function that gracefully stops the server and closes the database connection.
-func (n *AuthNode) SafeShutdown(ctx context.Context) error {
-	// Shutdown the server
-	if err := n.Server.Shutdown(ctx); err != nil {
-		return err
-	}
-
-	// Close the database connection
-	if err := n.ShutdownDB(); err != nil {
-		return err
-	}
-	return nil
-}
-
 // Code for Auth node
 func main() {
 	// Create a new HTTP server. This server will be responsible for sending
 	// notifications
-	server := &AuthNode{Node: node.NewNode(), Service_ID: utils.NewServiceID("AUTH")}
+	server := &core.AuthNode{Node: node.NewNode(), Service_ID: utils.NewServiceID("AUTH")}
 
 	fmt.Println("Auth Node created...")
 	fmt.Println("Initializing database...")
