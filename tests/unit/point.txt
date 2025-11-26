@@ -1,3 +1,0 @@
-For testing individual components.
-
-Write Go tests for your controller and node logic.

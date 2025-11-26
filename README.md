@@ -4,15 +4,6 @@
 
 Piranid is a cloud-connected Kubernetes cluster project running on a fleet of Raspberry Pi devices to create a distributed computing environment. It integrates with major cloud providers for hybrid deployments and demonstrates expertise in container orchestration, microservices management, and cloud-native development. It features a lightweight control plane on a Raspberry Pi 4B (Norn) and multiple worker nodes (Gaunts) using Raspberry Pi Zero 2Ws. The system integrates with cloud services for monitoring, management, and scalability.
 
-## Features (proposed)
-
-- **Kubernetes-based cluster** with Raspberry Pi nodes
-- **Microservices deployment** using Docker and Kubernetes
-- **Automated CI/CD pipelines** for seamless updates
-- **Monitoring** using a custom logging service
-- **K3s-based Kubernetes deployment** for lightweight cluster management
-- **Dynamic scalability** to add or remove worker nodes
-
 ## Repository Structure
 
 ```plaintext
@@ -54,17 +45,17 @@ piranid/
 - **4 x Raspberry Pi Zero 2W** (Worker Nodes)
 - **1 x Cluster Hat v2.5**
 
-## Technologies Used (proposed)
+## Technologies Used
 
-- **Go** for backend microservices
+- **Go** For backend microservices
 - **Docker**: For containerizing your microservices
 - **K3s**: The lightweight Kubernetes distribution for orchestrating your containers/ Loadbalancer / Reverse Proxy
-- **containerd**: The container runtime used by K3s
 - **gRPC**: An efficient protocol for communication between microservices
-- **A message queue like RabbitMQ**: For asynchronous communication between services
-- **SQLite**: a sql database for data storage
-- **Redis**: a caching service
-- **TSDB**: a time series DB for logs (Prometheus or InfluxDB)
+- **RabbitMQ**: For asynchronous communication between services
+- **SQLite**: A sql database for data storage
+- **Redis**: A caching service
+- **InfluxDB**: A time series DB for logs
+- **Graphana**: For visualizing metrics
 
 ## Usage
 
