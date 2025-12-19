@@ -1,0 +1,12 @@
+go 1.24.0
+
+toolchain go1.24.9
+
+use (
+	./nodes/Auth
+	./nodes/Event_Queue
+	./nodes/Logging
+	./nodes/Notifications
+	./pkg
+	./pkg/node
+)
