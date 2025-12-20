@@ -1,8 +1,8 @@
 syntax = "proto3";
 
 enum Status {
-    failure = 0;
-    success = 1;
+    FAILURE = 0;
+    SUCCESS = 1;
 }
 
 // TODO FIX THESE PROTOCOLS
@@ -21,7 +21,7 @@ service Notifier {
     // rpc RequestNotificationList(NotificationListRequest) returns NotificationListResponse;
 
     //updates the user's information, either email or phone must be filled
-    rpc RequestUserNotificationUpdate(UserNotificationUpdate) returns (userNotificationResponse);
+    rpc RequestUserNotificationUpdate(UserNotificationUpdate) returns (UserNotificationResponse);
 
     //requests a TFA notification (code will need to be generated)
     // Will i need to send code to the other service?
@@ -72,7 +72,7 @@ message UserNotificationUpdate {
     string contact_info = 3; // check for @, if not there, it's phone
 }
 
-message userNotificationResponse {
+message UserNotificationResponse {
     Status success = 1;
     optional string response_message = 2;
 }

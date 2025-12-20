@@ -55,7 +55,7 @@ piranid/
 - **SQLite**: A sql database for data storage
 - **Redis**: A caching service
 - **InfluxDB**: A time series DB for logs
-- **Graphana**: For visualizing metrics
+- **Apache Echart**: For visualizing metrics
 
 ## Usage
 

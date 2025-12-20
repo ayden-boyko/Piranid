@@ -12,8 +12,10 @@ service Logger {
     // reducing the number of write operations, but requires flushing to 
     // ensure all data is persisted.
 
+    // requests specific log
     rpc RequestLog (Log) returns (LogResponse);
 
+    // sends a specific log
     rpc SendLog (Log) returns (LogResponse);
     
     // FlushLog ensures that all logs currently buffered are written out. 
@@ -50,7 +52,7 @@ message Log {
     string span_id = 3; // traces operation through actions (events in trace)
     string parent_id = 4; // for linking requests (can track process liyfcycle)
     google.protobuf.Timestamp timestamp = 5; // TODO use ntp time on micro services for more accuracy
-    string log_level = 6;// SEC, INFO, ERROR, ETC
+    string log_level = 6; // SEC, INFO, ERROR, ETC
     string log_message = 7;
     optional string metadata = 8; // JSON format additional data(host, user, etc)
 }
