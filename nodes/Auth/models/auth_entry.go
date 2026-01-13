@@ -2,6 +2,7 @@ package models
 
 import (
 	sharedModels "Piranid/pkg/models"
+	"time"
 )
 
 // AuthEntry extends Entry with auth-specific metadata
@@ -14,6 +15,14 @@ type AuthEntry struct {
 	HashedPassword     string `json:"hashed_password"`
 	ServiceId          string `json:"service_id"`
 	RedirectURI        string `json:"redirect_uri"`
+}
+
+func (e AuthEntry) GetID() (uint64, error) {
+	return e.Entry.Id, nil
+}
+
+func (e AuthEntry) GetDateCreated() (*time.Time, error) {
+	return &e.Entry.Date_Created, nil
 }
 
 func (e *AuthEntry) GetClientId() string {

@@ -9,8 +9,8 @@ import (
 
 // Define an interface that all entry types must implement
 type Entry interface {
-	GetID() uint64
-	GetDateCreated() time.Time
+	GetID() (uint64, error)
+	GetDateCreated() (*time.Time, error)
 }
 
 type DataManagerImpl[T Entry] struct {
@@ -18,6 +18,9 @@ type DataManagerImpl[T Entry] struct {
 	tableName string
 }
 
+// NewDataManager creates a new data manager with the given database connection and table name.
+// It returns an error if the database connection is nil, or if the database connection is lost,
+// or if the table name is empty.
 func NewDataManager[T Entry](db *sql.DB, tableName string) (*DataManagerImpl[T], error) {
 	if db == nil {
 		return nil, errors.New("database connection is nil")
