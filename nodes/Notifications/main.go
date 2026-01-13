@@ -15,73 +15,11 @@ import (
 	node "Piranid/node"
 	utils "Piranid/pkg"
 
+	core "github.com/ayden-boyko/Piranid/nodes/Notifications/notifcore"
+
 	"github.com/trycourier/courier-go/v2"
 	_ "modernc.org/sqlite"
 )
-
-type NotificationNode struct {
-	*node.Node
-	Notifier   *courier.Client
-	service_ID string
-}
-
-func (n *NotificationNode) GetServiceID() string { return n.service_ID }
-
-func (n *NotificationNode) RegisterRoutes() {
-	// TODO Actual route registration for logging server
-	n.Node.Router.HandleFunc("/notification_test", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("Sending notification...")
-		fmt.Fprint(w, "Sending notification...")
-		client := courier.CreateClient(
-			os.Getenv("COURIER_TOKEN"), nil,
-		)
-		requestID, err := client.SendMessage(
-			context.Background(),
-			courier.SendMessageRequestBody{
-				Message: map[string]interface{}{
-					"to": map[string]string{
-						"email": "aydenboyko@gmail.com",
-					},
-					"template": "2GPARRPY3S4WHDKV8G07V5JKNNHZ",
-					"data": map[string]string{
-						"data": "HAHAHA THIS IS TESTING DTATA",
-					},
-				},
-			},
-		)
-
-		if err != nil {
-			log.Fatalln(err)
-		}
-		log.Println(requestID)
-		fmt.Println("Notification sent...")
-	})
-
-}
-
-func (l *NotificationNode) ShutdownDB() error {
-	db := l.Node.GetDB()
-	if sqliteDB, ok := db.(*sql.DB); ok {
-		sqliteDB.Close()
-		fmt.Println("Database closed...")
-		return nil
-	}
-	return errors.New("database is not *sql.DB, is type " + fmt.Sprintf("%T", db))
-}
-
-// SafeShutdown is a function that gracefully stops the server and closes the database connection.
-func (n *NotificationNode) SafeShutdown(ctx context.Context) error {
-	// Shutdown the server
-	if err := n.Server.Shutdown(ctx); err != nil {
-		return err
-	}
-
-	// Close the database connection
-	if err := n.ShutdownDB(); err != nil {
-		return err
-	}
-	return nil
-}
 
 // Code for Auth node
 func main() {
@@ -91,7 +29,7 @@ func main() {
 	)
 	// Create a new HTTP server. This server will be responsible for sending
 	// notifications
-	server := &NotificationNode{Node: node.NewNode(), Notifier: client, service_ID: utils.NewServiceID("NOTI")}
+	server := &core.NotificationNode{Node: node.NewNode(), Notifier: client, Service_ID: utils.NewServiceID("NOTI")}
 
 	fmt.Println("Notification Node created...")
 	fmt.Println("Initializing database...")

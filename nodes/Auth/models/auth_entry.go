@@ -16,26 +16,26 @@ type AuthEntry struct {
 	RedirectURI        string `json:"redirect_uri"`
 }
 
-func (e AuthEntry) GetClientId() string {
+func (e *AuthEntry) GetClientId() string {
 	return e.ClientId
 }
 
-func (e AuthEntry) GetClientSecret() string {
+func (e *AuthEntry) GetClientSecret() string {
 	return e.ClientSecret
 }
 
-func (e AuthEntry) GetUsername() string {
+func (e *AuthEntry) GetUsername() string {
 	return e.Username
 }
 
-func (e AuthEntry) GetUserEmail() string {
+func (e *AuthEntry) GetUserEmail() string {
 	return e.UserEmail
 }
 
-func (e AuthEntry) GetHashedPassword() string {
+func (e *AuthEntry) GetHashedPassword() string {
 	return e.HashedPassword
 }
 
-func (e AuthEntry) GetServiceId() string {
+func (e *AuthEntry) GetServiceId() string {
 	return e.ServiceId
 }

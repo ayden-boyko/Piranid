@@ -11,10 +11,10 @@ type AuthCodeEntry struct {
 	Expires            int64  `json:"expires"`
 }
 
-func (e AuthCodeEntry) GetAuthCode() string {
+func (e *AuthCodeEntry) GetAuthCode() string {
 	return e.AuthCode
 }
 
-func (e AuthCodeEntry) GetExpires() int64 {
+func (e *AuthCodeEntry) GetExpires() int64 {
 	return e.Expires
 }
