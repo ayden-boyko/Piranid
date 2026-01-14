@@ -1,11 +1,16 @@
 syntax = "proto3";
 
+option go_package = "github.com/you/Piranid/nodes/Notifications/proto/notifications";
+
+package notifications;
+
 enum Status {
     FAILURE = 0;
     SUCCESS = 1;
 }
 
-// TODO FIX THESE PROTOCOLS
+// Handles time sensetive notifications with gRPC, 
+// less important ones are handled with MQs
 service Notifier {
     //requests that a notification is sent to the user, the id, denote what service is requesting
     // the method is sms,email, push, etc
