@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-option go_package = "github.com/you/Piranid/nodes/Notifications/proto/notifications";
+option go_package = "github.com/ayden-boyko/Piranid/pkg/proto/notifications/v1";
 
-package notifications;
+package notifications.v1;
 
 enum Status {
     FAILURE = 0;
@@ -28,6 +28,9 @@ service Notifier {
     //updates the user's information, either email or phone must be filled
     rpc RequestUserNotificationUpdate(UserNotificationUpdate) returns (UserNotificationResponse);
 
+    // TODO change this to be a different protofile,
+    // this is service-specific logic leaking
+    // VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
     //requests a TFA notification (code will need to be generated)
     // Will i need to send code to the other service?
     rpc RequestTFA(TFARequest) returns (TFAResponse);

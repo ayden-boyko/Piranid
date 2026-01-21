@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS notifications (
 CREATE TABLE IF NOT EXISTS templates (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     service_id INTEGER NOT NULL,
+    method VARCHAR(255) NOT NULL,
     username VARCHAR(255) NOT NULL,
     template VARCHAR(255) NOT NULL
 )

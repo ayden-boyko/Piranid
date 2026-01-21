@@ -12,13 +12,16 @@ import (
 
 	model "github.com/ayden-boyko/Piranid/nodes/Notifications/models"
 
+	v1 "Piranid/pkg/proto/notifications/v1"
+
 	"github.com/trycourier/courier-go/v2"
 )
 
 type NotificationNode struct {
 	*node.Node
-	Notifier   *courier.Client
-	Service_ID string // TODO SHOULD services ID be public or private?
+	v1.UnimplementedNotifierServer
+	Messager   *courier.Client
+	Service_ID string
 }
 
 // TODO Caching
@@ -54,7 +57,7 @@ func (n *NotificationNode) HandleNotifSend(ctx context.Context, entry model.Noti
 
 	fmt.Println("Sending notification...")
 
-	requestID, err := n.Notifier.SendMessage(
+	requestID, err := n.Messager.SendMessage(
 		context.Background(),
 		courier.SendMessageRequestBody{
 			Message: map[string]interface{}{
@@ -112,7 +115,7 @@ func (n *NotificationNode) HandleNotifRetry(ctx context.Context, entry model.Not
 				return err
 			}
 
-			requestID, err := n.Notifier.SendMessage(
+			requestID, err := n.Messager.SendMessage(
 				context.Background(),
 				courier.SendMessageRequestBody{
 					Message: map[string]interface{}{
@@ -145,8 +148,8 @@ func (n *NotificationNode) RegisterRoutes() {
 		client := courier.CreateClient(
 			os.Getenv("COURIER_TOKEN"), nil,
 		)
-		n.Notifier = client
-		requestID, err := n.Notifier.SendMessage(
+		n.Messager = client
+		requestID, err := n.Messager.SendMessage(
 			context.Background(),
 			courier.SendMessageRequestBody{
 				Message: map[string]interface{}{
