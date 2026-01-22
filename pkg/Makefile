@@ -14,9 +14,9 @@ proto:
 	@mkdir -p $(GEN_DIR)
 	@echo "Generating $(PROTO_FILE) from $(PROTO_DIR) to $(GEN_DIR)..."
 	protoc --go_out=$(GEN_DIR) \
-	       --go_opt=module=github.com/ayden-boyko/Piranid \
+	       --go_opt=paths=source_relative \
 	       --go-grpc_out=$(GEN_DIR) \
-	       --go-grpc_opt=module=github.com/ayden-boyko/Piranid \
+	       --go-grpc_opt=paths=source_relative \
 	       -I=$(PROTO_DIR) \
 	       $(PROTO_SRC)
 
@@ -33,14 +33,13 @@ rebuild: clean proto
 # make proto PROTO_FILE=logging.proto
 
 # # Change output directory
-# make proto GEN_DIR=../../pkg/proto/notifications
+# make proto GEN_DIR=./pkg/proto/notifications
 
 # # Specify everything
 # make proto PROTO_DIR=../shared PROTO_FILE=events.proto GEN_DIR=./gen
 
-# # Generate to shared pkg location
+# # Generate to shared pkg location, run command when in /pkg
 # make proto \
-  PROTO_DIR=proto \
-  PROTO_FILE=notifications/v1/notifications.proto \
-  GEN_DIR=../../
-
+	PROTO_DIR=proto \
+	PROTO_FILE=notifications/v1/notifications.proto \
+	GEN_DIR=proto
