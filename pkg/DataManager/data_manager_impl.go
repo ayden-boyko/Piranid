@@ -9,7 +9,7 @@ import (
 
 // Define an interface that all entry types must implement
 type Entry interface {
-	GetID() (uint64, error)
+	GetID() (string, error)
 	GetDateCreated() (*time.Time, error)
 }
 
@@ -68,6 +68,42 @@ func (d *DataManagerImpl[T]) PushData(entry T, inserter func(*sql.Tx, T) error) 
 	defer tx.Rollback()
 
 	if err := inserter(tx, entry); err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (d *DataManagerImpl[T]) UpdateData(entry T, updater func(*sql.Tx, T) error) error {
+	if err := d.db.Ping(); err != nil {
+		return fmt.Errorf("database connection lost: %w", err)
+	}
+
+	tx, err := d.db.Begin()
+	if err != nil {
+		return fmt.Errorf("error starting transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	if err := updater(tx, entry); err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (d *DataManagerImpl[T]) DeleteData(entry T, deleter func(*sql.Tx, T) error) error {
+	if err := d.db.Ping(); err != nil {
+		return fmt.Errorf("database connection lost: %w", err)
+	}
+
+	tx, err := d.db.Begin()
+	if err != nil {
+		return fmt.Errorf("error starting transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	if err := deleter(tx, entry); err != nil {
 		return err
 	}
 

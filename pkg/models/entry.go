@@ -6,13 +6,13 @@ import (
 )
 
 type Entry struct {
-	Id           uint64    `json:"id"`
+	Id           string    `json:"id"`
 	Date_Created time.Time `json:"date_created"`
 }
 
-func (e Entry) GetID() (uint64, error) {
-	if e.Id == 0 {
-		return 0, errors.New("ID NIL")
+func (e Entry) GetID() (string, error) {
+	if e.Id == "" {
+		return "", errors.New("ID NIL")
 	}
 	return e.Id, nil
 }

@@ -72,7 +72,8 @@ type NotificationRequest struct {
 	ServiceId     string                 `protobuf:"bytes,1,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
 	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
 	Method        string                 `protobuf:"bytes,3,opt,name=method,proto3" json:"method,omitempty"`
-	Data          string                 `protobuf:"bytes,4,opt,name=data,proto3" json:"data,omitempty"`
+	Data          map[string]string      `protobuf:"bytes,4,rep,name=data,proto3" json:"data,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Importance    int32                  `protobuf:"varint,5,opt,name=importance,proto3" json:"importance,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -128,11 +129,18 @@ func (x *NotificationRequest) GetMethod() string {
 	return ""
 }
 
-func (x *NotificationRequest) GetData() string {
+func (x *NotificationRequest) GetData() map[string]string {
 	if x != nil {
 		return x.Data
 	}
-	return ""
+	return nil
+}
+
+func (x *NotificationRequest) GetImportance() int32 {
+	if x != nil {
+		return x.Importance
+	}
+	return 0
 }
 
 type NotificationResponse struct {
@@ -379,7 +387,7 @@ type TFAResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ServiceId     string                 `protobuf:"bytes,1,opt,name=service_id,json=serviceId,proto3" json:"service_id,omitempty"`
 	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
-	Sucess        Status                 `protobuf:"varint,3,opt,name=sucess,proto3,enum=notifications.v1.Status" json:"sucess,omitempty"`
+	Success       Status                 `protobuf:"varint,3,opt,name=success,proto3,enum=notifications.v1.Status" json:"success,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -428,9 +436,9 @@ func (x *TFAResponse) GetUsername() string {
 	return ""
 }
 
-func (x *TFAResponse) GetSucess() Status {
+func (x *TFAResponse) GetSuccess() Status {
 	if x != nil {
-		return x.Sucess
+		return x.Success
 	}
 	return Status_FAILURE
 }
@@ -439,13 +447,19 @@ var File_notifications_v1_notifications_proto protoreflect.FileDescriptor
 
 const file_notifications_v1_notifications_proto_rawDesc = "" +
 	"\n" +
-	"$notifications/v1/notifications.proto\x12\x10notifications.v1\"|\n" +
+	"$notifications/v1/notifications.proto\x12\x10notifications.v1\"\x86\x02\n" +
 	"\x13NotificationRequest\x12\x1d\n" +
 	"\n" +
 	"service_id\x18\x01 \x01(\tR\tserviceId\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x16\n" +
-	"\x06method\x18\x03 \x01(\tR\x06method\x12\x12\n" +
-	"\x04data\x18\x04 \x01(\tR\x04data\"\x8f\x01\n" +
+	"\x06method\x18\x03 \x01(\tR\x06method\x12C\n" +
+	"\x04data\x18\x04 \x03(\v2/.notifications.v1.NotificationRequest.DataEntryR\x04data\x12\x1e\n" +
+	"\n" +
+	"importance\x18\x05 \x01(\x05R\n" +
+	"importance\x1a7\n" +
+	"\tDataEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x8f\x01\n" +
 	"\x14NotificationResponse\x122\n" +
 	"\asuccess\x18\x01 \x01(\x0e2\x18.notifications.v1.StatusR\asuccess\x12.\n" +
 	"\x10response_message\x18\x02 \x01(\tH\x00R\x0fresponseMessage\x88\x01\x01B\x13\n" +
@@ -468,12 +482,12 @@ const file_notifications_v1_notifications_proto_rawDesc = "" +
 	"\fcontact_info\x18\x04 \x01(\tR\vcontactInfo\x12\x1d\n" +
 	"\atimeout\x18\x05 \x01(\x05H\x00R\atimeout\x88\x01\x01B\n" +
 	"\n" +
-	"\b_timeout\"z\n" +
+	"\b_timeout\"|\n" +
 	"\vTFAResponse\x12\x1d\n" +
 	"\n" +
 	"service_id\x18\x01 \x01(\tR\tserviceId\x12\x1a\n" +
-	"\busername\x18\x02 \x01(\tR\busername\x120\n" +
-	"\x06sucess\x18\x03 \x01(\x0e2\x18.notifications.v1.StatusR\x06sucess*\"\n" +
+	"\busername\x18\x02 \x01(\tR\busername\x122\n" +
+	"\asuccess\x18\x03 \x01(\x0e2\x18.notifications.v1.StatusR\asuccess*\"\n" +
 	"\x06Status\x12\v\n" +
 	"\aFAILURE\x10\x00\x12\v\n" +
 	"\aSUCCESS\x10\x012\x8f\x03\n" +
@@ -498,7 +512,7 @@ func file_notifications_v1_notifications_proto_rawDescGZIP() []byte {
 }
 
 var file_notifications_v1_notifications_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_notifications_v1_notifications_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_notifications_v1_notifications_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_notifications_v1_notifications_proto_goTypes = []any{
 	(Status)(0),                      // 0: notifications.v1.Status
 	(*NotificationRequest)(nil),      // 1: notifications.v1.NotificationRequest
@@ -507,24 +521,26 @@ var file_notifications_v1_notifications_proto_goTypes = []any{
 	(*UserNotificationResponse)(nil), // 4: notifications.v1.UserNotificationResponse
 	(*TFARequest)(nil),               // 5: notifications.v1.TFARequest
 	(*TFAResponse)(nil),              // 6: notifications.v1.TFAResponse
+	nil,                              // 7: notifications.v1.NotificationRequest.DataEntry
 }
 var file_notifications_v1_notifications_proto_depIdxs = []int32{
-	0, // 0: notifications.v1.NotificationResponse.success:type_name -> notifications.v1.Status
-	0, // 1: notifications.v1.UserNotificationResponse.success:type_name -> notifications.v1.Status
-	0, // 2: notifications.v1.TFAResponse.sucess:type_name -> notifications.v1.Status
-	1, // 3: notifications.v1.Notifier.RequestNotification:input_type -> notifications.v1.NotificationRequest
-	1, // 4: notifications.v1.Notifier.DeleteUser:input_type -> notifications.v1.NotificationRequest
-	3, // 5: notifications.v1.Notifier.RequestUserNotificationUpdate:input_type -> notifications.v1.UserNotificationUpdate
-	5, // 6: notifications.v1.Notifier.RequestTFA:input_type -> notifications.v1.TFARequest
-	2, // 7: notifications.v1.Notifier.RequestNotification:output_type -> notifications.v1.NotificationResponse
-	2, // 8: notifications.v1.Notifier.DeleteUser:output_type -> notifications.v1.NotificationResponse
-	4, // 9: notifications.v1.Notifier.RequestUserNotificationUpdate:output_type -> notifications.v1.UserNotificationResponse
-	6, // 10: notifications.v1.Notifier.RequestTFA:output_type -> notifications.v1.TFAResponse
-	7, // [7:11] is the sub-list for method output_type
-	3, // [3:7] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	7, // 0: notifications.v1.NotificationRequest.data:type_name -> notifications.v1.NotificationRequest.DataEntry
+	0, // 1: notifications.v1.NotificationResponse.success:type_name -> notifications.v1.Status
+	0, // 2: notifications.v1.UserNotificationResponse.success:type_name -> notifications.v1.Status
+	0, // 3: notifications.v1.TFAResponse.success:type_name -> notifications.v1.Status
+	1, // 4: notifications.v1.Notifier.RequestNotification:input_type -> notifications.v1.NotificationRequest
+	1, // 5: notifications.v1.Notifier.DeleteUser:input_type -> notifications.v1.NotificationRequest
+	3, // 6: notifications.v1.Notifier.RequestUserNotificationUpdate:input_type -> notifications.v1.UserNotificationUpdate
+	5, // 7: notifications.v1.Notifier.RequestTFA:input_type -> notifications.v1.TFARequest
+	2, // 8: notifications.v1.Notifier.RequestNotification:output_type -> notifications.v1.NotificationResponse
+	2, // 9: notifications.v1.Notifier.DeleteUser:output_type -> notifications.v1.NotificationResponse
+	4, // 10: notifications.v1.Notifier.RequestUserNotificationUpdate:output_type -> notifications.v1.UserNotificationResponse
+	6, // 11: notifications.v1.Notifier.RequestTFA:output_type -> notifications.v1.TFAResponse
+	8, // [8:12] is the sub-list for method output_type
+	4, // [4:8] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_notifications_v1_notifications_proto_init() }
@@ -541,7 +557,7 @@ func file_notifications_v1_notifications_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_notifications_v1_notifications_proto_rawDesc), len(file_notifications_v1_notifications_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

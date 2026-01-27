@@ -42,7 +42,8 @@ message NotificationRequest {
     string service_id = 1;
     string username = 2;
     string method = 3;
-    string data = 4;
+    map<string, string> data = 4;
+    int32 importance = 5;
 }
 
 message NotificationResponse {
@@ -96,7 +97,7 @@ message TFARequest{
 message TFAResponse {
     string service_id = 1;
     string username = 2;
-    Status sucess = 3;
+    Status success = 3;
 
 }
 
