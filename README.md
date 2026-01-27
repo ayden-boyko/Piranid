@@ -17,7 +17,7 @@ piranid/
 │   ├── api/                       # Cluster management API
 │   └── Dockerfile                 # Controller container image
 ├── nodes/                         # Worker node code (Pi Zero 2W / Gaunts)
-│   ├── tasks/                     # Node-specific execution logic
+│   ├── auth, logging, etc/        # Node-specific execution logic
 │   │   ├── main.go                # Node entry point
 │   │   └── Dockerfile             # Node container image
 ├── shared/                        # Shared utilities and libraries
