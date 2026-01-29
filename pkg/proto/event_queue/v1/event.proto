@@ -5,7 +5,8 @@ enum Status {
     SUCCESS = 1;
 }
 
-// TODO FIX THIS PROTOBUF
+// Eventer is the main service for handling events. It provides methods for
+// requesting events, checking data consistency, and fast-tracking 2FA
 service Eventer {
     //requests an async event to take place (i.e logging, non TFA, etc)
     rpc RequestEvent(EventRequest) returns (EventResponse);
@@ -13,9 +14,6 @@ service Eventer {
     //goes through all the services and checks that data is consistent
     // (i.e user want to be notified by email, checks that notification server has email contact, etc..)
     rpc RequestConsistencyCheck(ConsistencyRequest) returns (ConsistencyResponse);
-
-    // special rpc call for 2FA, is fast tracked to its own queue
-    rpc RequestTFA(TFARequest) returns (TFAResponse);
 
     //I have the grpc log protocols alreayd in Logger, 
     // Is it neccesary to be able to async add logs?
@@ -43,18 +41,4 @@ message ConsistencyResponse{
     Status success = 1;
     string username = 2;
     repeated string other_services = 3;
-}
-
-message TFARequest {
-    string service_id = 1;
-    string username = 2;
-    string method = 3;
-    string contact_info = 4;
-    optional int32 timeout = 5;
-}
-
-message TFAResponse {
-    string service_id = 1;
-    string username = 2;
-    Status sucess = 3;
 }
