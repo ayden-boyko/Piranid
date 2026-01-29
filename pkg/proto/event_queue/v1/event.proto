@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+enum Status {
+    FAILURE = 0;
+    SUCCESS = 1;
+}
+
+// TODO FIX THIS PROTOBUF
+service Eventer {
+    //requests an async event to take place (i.e logging, non TFA, etc)
+    rpc RequestEvent(EventRequest) returns (EventResponse);
+
+    //goes through all the services and checks that data is consistent
+    // (i.e user want to be notified by email, checks that notification server has email contact, etc..)
+    rpc RequestConsistencyCheck(ConsistencyRequest) returns (ConsistencyResponse);
+
+    // special rpc call for 2FA, is fast tracked to its own queue
+    rpc RequestTFA(TFARequest) returns (TFAResponse);
+
+    //I have the grpc log protocols alreayd in Logger, 
+    // Is it neccesary to be able to async add logs?
+    // whats the benefit of non-time sensetiev logging? IDK, MORE RESEARCH REQUIRED
+}
+message EventRequest {
+    string service_id = 1;
+    string username = 2;
+    string data = 3;
+}
+
+message EventResponse {
+    string service_id = 1;
+    string username = 2;
+    Status success = 3;
+}
+
+message ConsistencyRequest {
+    string service_id = 1;
+    string username = 2;
+    repeated string other_services = 3;
+}
+
+message ConsistencyResponse{
+    Status success = 1;
+    string username = 2;
+    repeated string other_services = 3;
+}
+
+message TFARequest {
+    string service_id = 1;
+    string username = 2;
+    string method = 3;
+    string contact_info = 4;
+    optional int32 timeout = 5;
+}
+
+message TFAResponse {
+    string service_id = 1;
+    string username = 2;
+    Status sucess = 3;
+}
