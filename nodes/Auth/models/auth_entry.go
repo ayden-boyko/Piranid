@@ -17,7 +17,7 @@ type AuthEntry struct {
 	RedirectURI        string `json:"redirect_uri"`
 }
 
-func (e AuthEntry) GetID() (uint64, error) {
+func (e AuthEntry) GetID() (string, error) {
 	return e.Entry.Id, nil
 }
 

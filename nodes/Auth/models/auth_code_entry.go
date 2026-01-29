@@ -12,7 +12,7 @@ type AuthCodeEntry struct {
 	Expires            int64  `json:"expires"`
 }
 
-func (e AuthCodeEntry) GetID() (uint64, error) {
+func (e AuthCodeEntry) GetID() (string, error) {
 	return e.Entry.Id, nil
 }
 

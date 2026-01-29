@@ -26,9 +26,8 @@ type NotificationNode struct {
 
 // TODO Caching
 
-func (n *NotificationNode) GetServiceID() string { return n.Service_ID }
-
-// when sending a notif, its implied that importance is >= 5
+// * Only to be used internally, hence the name
+// sends a notif, will be used by gRPC and MQ
 func (n *NotificationNode) HandleNotifSend(ctx context.Context, entry model.NotifEntry) error {
 	err := entry.ValidateIntegrity()
 	if err != nil {
@@ -50,7 +49,7 @@ func (n *NotificationNode) HandleNotifSend(ctx context.Context, entry model.Noti
 		return err
 	}
 
-	info, err := entry.GetInfo()
+	data, err := entry.GetData()
 	if err != nil {
 		return err
 	}
@@ -58,16 +57,14 @@ func (n *NotificationNode) HandleNotifSend(ctx context.Context, entry model.Noti
 	fmt.Println("Sending notification...")
 
 	requestID, err := n.Messager.SendMessage(
-		context.Background(),
+		ctx,
 		courier.SendMessageRequestBody{
 			Message: map[string]interface{}{
 				"to": map[string]string{
 					string(method): contact,
 				},
 				"template": template,
-				"data": map[string]string{
-					"data": info,
-				},
+				"data":     data,
 			},
 		},
 	)
@@ -83,6 +80,8 @@ func (n *NotificationNode) HandleNotifSend(ctx context.Context, entry model.Noti
 	return nil
 }
 
+// * Only to be used internally, hence the name
+// retries sending a notif
 func (n *NotificationNode) HandleNotifRetry(ctx context.Context, entry model.NotifEntry) error {
 	for {
 		select {
@@ -110,7 +109,7 @@ func (n *NotificationNode) HandleNotifRetry(ctx context.Context, entry model.Not
 				return err
 			}
 
-			info, err := entry.GetInfo()
+			data, err := entry.GetData()
 			if err != nil {
 				return err
 			}
@@ -123,9 +122,7 @@ func (n *NotificationNode) HandleNotifRetry(ctx context.Context, entry model.Not
 							string(method): contact,
 						},
 						"template": template,
-						"data": map[string]string{
-							"data": info,
-						},
+						"data":     data,
 					},
 				},
 			)
@@ -140,8 +137,30 @@ func (n *NotificationNode) HandleNotifRetry(ctx context.Context, entry model.Not
 
 }
 
+// TODO, set up DB stuff
+// TODO fill out
+// switches notif status to sent
+func (n *NotificationNode) NotifSent(ctx context.Context, entry model.NotifEntry) error {
+	return nil
+}
+
+// TODO fill out
+func (n *NotificationNode) RemoveNotif(ctx context.Context, entry model.NotifEntry) error {
+	return nil
+}
+
+// TODO fill out
+// adds notif to DB after sending, dont save notif data, LOOK AT NOTEBOOK for more info
+func (n *NotificationNode) StoreNotif(ctx context.Context, entry model.NotifEntry) error {
+	return nil
+}
+
+// ! NOT NEEDED, NO HTTP happening, set up messager in node startup in main
 func (n *NotificationNode) RegisterRoutes() {
 	// TODO Actual route registration for logging server
+	// TODO set up adding and removing from db
+	// TODO, add notif to db before sending
+	// TODO add notif to cache before sending, once sent remove from cache
 	n.Node.Router.HandleFunc("/notification_test", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Sending notification...")
 		fmt.Fprint(w, "Sending notification...")

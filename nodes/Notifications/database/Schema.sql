@@ -2,7 +2,9 @@ CREATE TABLE IF NOT EXISTS notifications (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     service_id INTEGER NOT NULL,
     username VARCHAR(255) NOT NULL,
-    info VARCHAR(255) NOT NULL
+    info VARCHAR(255) NOT NULL,
+    method VARCHAR(255) NOT NULL,
+    sent BOOLEAN
 );
 
 CREATE TABLE IF NOT EXISTS templates (
