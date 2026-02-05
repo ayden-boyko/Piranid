@@ -11,6 +11,7 @@ import (
 	"os"
 
 	model "github.com/ayden-boyko/Piranid/nodes/Notifications/models"
+	"github.com/ayden-boyko/Piranid/nodes/Notifications/utils"
 
 	v1 "Piranid/pkg/proto/notifications/v1"
 
@@ -137,22 +138,33 @@ func (n *NotificationNode) HandleNotifRetry(ctx context.Context, entry model.Not
 
 }
 
-// TODO, set up DB stuff
-// TODO fill out
 // switches notif status to sent
 func (n *NotificationNode) NotifSent(ctx context.Context, entry model.NotifEntry) error {
-	return nil
+	dbTx, ok := n.DB.(*sql.Tx)
+	if !ok {
+		return errors.New("database is not a transaction")
+	}
+	err := utils.NotifUpdater(dbTx, entry, true)
+	return err
 }
 
-// TODO fill out
 func (n *NotificationNode) RemoveNotif(ctx context.Context, entry model.NotifEntry) error {
-	return nil
+	dbTx, ok := n.DB.(*sql.Tx)
+	if !ok {
+		return errors.New("database is not a transaction")
+	}
+	err := utils.NotifDeleter(dbTx, entry)
+	return err
 }
 
-// TODO fill out
 // adds notif to DB after sending, dont save notif data, LOOK AT NOTEBOOK for more info
 func (n *NotificationNode) StoreNotif(ctx context.Context, entry model.NotifEntry) error {
-	return nil
+	dbTx, ok := n.DB.(*sql.Tx)
+	if !ok {
+		return errors.New("database is not a transaction")
+	}
+	err := utils.NotifInserter(dbTx, entry)
+	return err
 }
 
 // ! NOT NEEDED, NO HTTP happening, set up messager in node startup in main

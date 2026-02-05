@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	model "github.com/ayden-boyko/Piranid/nodes/Notifications/models"
+	"github.com/ayden-boyko/Piranid/nodes/Notifications/utils"
 
 	core "github.com/ayden-boyko/Piranid/nodes/Notifications/notifcore"
 )
@@ -23,11 +24,11 @@ func NewNotificationHandler(node *core.NotificationNode) *NotificationHandler {
 
 func (h *NotificationHandler) RequestNotification(ctx context.Context, req *v1.NotificationRequest) (*v1.NotificationResponse, error) {
 	var responseMessage string
-	var notifReq = &model.NotifEntry{}
-
-	notifReq.Entry.Id = req.ServiceId
-	notifReq.ContactInfo = req.Username
-	notifReq.Importance = req.Importance
+	notifReq, err := utils.ConvertToNotifEntry(req)
+	if err != nil {
+		responseMessage = err.Error()
+		return &v1.NotificationResponse{Success: v1.Status_FAILURE, ResponseMessage: &responseMessage}, err
+	}
 
 	switch req.Method {
 	case "Mobile":
@@ -40,7 +41,7 @@ func (h *NotificationHandler) RequestNotification(ctx context.Context, req *v1.N
 		return &v1.NotificationResponse{Success: v1.Status_FAILURE, ResponseMessage: &responseMessage}, errors.New("Invalid method")
 	}
 
-	err := h.NotificationNode.HandleNotifSend(ctx, *notifReq)
+	err = h.NotificationNode.HandleNotifSend(ctx, *notifReq)
 	if err != nil {
 		responseMessage = err.Error()
 		return &v1.NotificationResponse{Success: v1.Status_FAILURE, ResponseMessage: &responseMessage}, err
@@ -50,11 +51,20 @@ func (h *NotificationHandler) RequestNotification(ctx context.Context, req *v1.N
 	return &v1.NotificationResponse{Success: v1.Status_SUCCESS, ResponseMessage: &responseMessage}, nil
 }
 
-// !Will need to convert NotificationRequest to NotifEntry type
-// TODO fill these out VVVV
-
 func (h *NotificationHandler) DeleteUser(ctx context.Context, req *v1.NotificationRequest) (*v1.NotificationResponse, error) {
 	var responseMessage string
+
+	notifReq, err := utils.ConvertToNotifEntry(req)
+	if err != nil {
+		responseMessage = err.Error()
+		return &v1.NotificationResponse{Success: v1.Status_FAILURE, ResponseMessage: &responseMessage}, err
+	}
+
+	err = h.NotificationNode.RemoveNotif(ctx, *notifReq)
+	if err != nil {
+		responseMessage = err.Error()
+		return &v1.NotificationResponse{Success: v1.Status_FAILURE, ResponseMessage: &responseMessage}, err
+	}
 
 	responseMessage = "User deleted successfully"
 	return &v1.NotificationResponse{Success: v1.Status_SUCCESS, ResponseMessage: &responseMessage}, nil
@@ -62,6 +72,16 @@ func (h *NotificationHandler) DeleteUser(ctx context.Context, req *v1.Notificati
 
 func (h *NotificationHandler) RequestUserNotificationUpdate(ctx context.Context, req *v1.UserNotificationUpdate) (*v1.UserNotificationResponse, error) {
 	var responseMessage string
+	notifReq := &model.NotifEntry{}
+
+	notifReq.ContactInfo = req.ContactInfo
+	notifReq.Id = req.ServiceId
+
+	err := h.NotificationNode.NotifSent(ctx, *notifReq)
+	if err != nil {
+		responseMessage = err.Error()
+		return &v1.UserNotificationResponse{Success: v1.Status_FAILURE, ResponseMessage: &responseMessage}, err
+	}
 
 	responseMessage = "User notification updated successfully"
 	return &v1.UserNotificationResponse{Success: v1.Status_SUCCESS, ResponseMessage: &responseMessage}, nil
