@@ -2,7 +2,7 @@
 
 ## Overview
 
-Piranid is a personal project I built to learn more about Kubernetes, distributed systems, and running real workloads on limited hardware. It’s a small Kubernetes cluster made from Raspberry Pis, with a lightweight control plane running on a Raspberry Pi 4B (called a *Norn*) and several Raspberry Pi Zero 2Ws acting as worker nodes (*Gaunts*).
+Piranid is a personal project I built to learn more about Kubernetes, distributed systems, and running real workloads on limited hardware. It’s a small Kubernetes cluster made from Raspberry Pis, with a lightweight control plane running on a Raspberry Pi 4B and several Raspberry Pi Zero 2Ws acting as worker nodes.
 
 The goal wasn’t just to get Kubernetes running, but to understand how scheduling, service communication, and monitoring work under real constraints. I also wanted the cluster to be cloud-aware, so it integrates with external services for metrics, logging, and management. Piranid acts as a hands-on testbed for experimenting with microservices, hybrid cloud ideas, and cluster automation.
 
@@ -43,21 +43,21 @@ piranid/
 
 ## Hardware Setup
 
-- **1 × Raspberry Pi 4B** — control plane node  
-- **4 × Raspberry Pi Zero 2W** — worker nodes  
+- **1 × Raspberry Pi 4B** — control plane node
+- **4 × Raspberry Pi Zero 2W** — worker nodes
 - **1 × Cluster Hat v2.5**
 
 ## Technologies Used
 
-- **Go** for cluster services and node logic  
-- **Docker** for packaging services  
-- **K3s** for a lightweight Kubernetes distribution  
-- **gRPC** for communication between controllers and nodes  
-- **RabbitMQ** for async messaging and task coordination  
-- **SQLite** for lightweight persistent storage  
-- **Redis** for caching and fast state access  
-- **InfluxDB** for metrics and time-series data  
-- **Apache ECharts** for visualizing cluster metrics  
+- **Go** for cluster services and node logic
+- **Docker** for packaging services
+- **K3s** for a lightweight Kubernetes distribution
+- **gRPC** for communication between controllers and nodes
+- **RabbitMQ** for async messaging and task coordination
+- **SQLite** for lightweight persistent storage
+- **Redis** for caching and fast state access
+- **InfluxDB** for metrics and time-series data
+- **Apache ECharts** for visualizing cluster metrics
 
 ## Usage
 
