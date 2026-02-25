@@ -23,6 +23,9 @@ type EventNode struct {
 	service_ID string
 }
 
+// use sqlite db for state
+// ! must use dockerized rabbitmq server
+
 //TODO Your service could listen for special `control` or `configuration events on a management queue or exchange.
 // When it receives an event describing a new topic and binding, it would create them in RabbitMQ accordingly
 

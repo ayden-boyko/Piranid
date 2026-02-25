@@ -11,12 +11,12 @@ The goal wasn’t just to get Kubernetes running, but to understand how scheduli
 ```plaintext
 piranid/
 ├── docs/                          # Design notes and documentation
-├── controllers/                   # Control plane code (Pi 4B / Norns)
+├── controllers/                   # Control plane code (Pi 4B )
 │   ├── main.go                    # Controller entry point
 │   ├── scheduler/                 # Custom scheduling logic
 │   ├── api/                       # Cluster management API
 │   └── Dockerfile                 # Controller container image
-├── nodes/                         # Worker node code (Pi Zero 2W / Gaunts)
+├── nodes/                         # Worker node code (Pi Zero 2W )
 │   ├── auth, logging, etc/        # Node-specific execution logic
 │   │   ├── main.go                # Node entry point
 │   │   └── Dockerfile             # Node container image
