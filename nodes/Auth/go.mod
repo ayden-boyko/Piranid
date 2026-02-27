@@ -28,4 +28,3 @@ require (
 )
 
 replace Piranid/pkg => ../../pkg
-

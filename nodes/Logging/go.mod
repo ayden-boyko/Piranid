@@ -23,4 +23,4 @@ require (
 
 replace Piranid/pkg => ../../pkg
 
-replace Piranid/node => ../../pkg/node
+replace Piranid/pkg/node => ../../pkg/node

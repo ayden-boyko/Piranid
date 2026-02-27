@@ -16,11 +16,11 @@ import (
 type LoggingNode struct {
 	*node.Node // embedding Node
 	writeAPI   api.WriteAPI
-	buffer     *redis.Client
-	service_ID string
+	Buffer     *redis.Client
+	Service_ID string
 }
 
-func (n *LoggingNode) GetServiceID() string { return n.service_ID }
+func (n *LoggingNode) GetServiceID() string { return n.Service_ID }
 
 func (l *LoggingNode) GetWriter() api.WriteAPI {
 	return l.writeAPI

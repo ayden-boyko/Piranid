@@ -24,11 +24,11 @@ func main() {
 	// Create a new HTTP server. This server will be responsible for running the
 	// API and handling requests.
 	fmt.Println("Creating a new Logging Node...")
-	server := &core.LoggingNode{Node: node.NewNode(), buffer: redis.NewClient(&redis.Options{
+	server := &core.LoggingNode{Node: node.NewNode(), Buffer: redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("localhost:%s", os.Getenv("REDIS_PORT")),
 		Password: "", // no password set
 		DB:       0,  // use default DB
-	}), service_ID: utils.NewServiceID("LOGS")}
+	}), Service_ID: utils.NewServiceID("LOGS")}
 
 	server.SetDB(influxdb2.NewClient(fmt.Sprintf("http://localhost:%s", os.Getenv("DB_PORT")), os.Getenv("DB_TOLKEN")))
 	fmt.Println("Database created...")
