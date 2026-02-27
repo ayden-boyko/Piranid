@@ -14,7 +14,7 @@ import (
 	node "Piranid/node"
 	utils "Piranid/pkg"
 
-	core "github.com/ayden-boyko/Piranid/nodes/Auth/authcore"
+	core "github.com/ayden-boyko/Piranid/nodes/Remote_DB/dbcore"
 
 	"github.com/go-redis/redis"
 	_ "modernc.org/sqlite"
@@ -24,16 +24,14 @@ import (
 func main() {
 	// Create a new HTTP server. This server will be responsible for sending
 	// notifications
-	server := &core.AuthNode{Node: node.NewNode(), Service_ID: utils.NewServiceID("AUTH")}
+	server := &core.DBNode{Node: node.NewNode(), Service_ID: utils.NewServiceID("DATA")}
 
-	fmt.Println("Auth Node created...")
+	fmt.Println("Remote DB Node created...")
 
-	// TODO: Connect to Remote DB
-	// instead of local path, use remote instead.
-	// SetUpDB(node, "sqlite", "sqlite://user:pass@192.168.x.x:5432/auth_db", "schema.sql")
-	utils.SetUpDB(server.Node, "sqlite", "./Auth_DB.db", "./Schema.sql")
-
-	log.Fatalf("Error connecting to Remote DB: %v", errors.New("Not connected to remote DB"))
+	// TODO set up postgres DB
+	// create sqlite DB, run schema
+	utils.SetUpDB(server.Node, "postgres", "./Auth_DB.db", "./Schema.sql")
+	utils.SetUpDB(server.Node, "postgres", "./Logging_DB.db", "./Schema.sql")
 
 	// Create a new Redis client
 	redisClient := redis.NewClient(&redis.Options{
@@ -48,9 +46,9 @@ func main() {
 	go func() {
 		// Run the server and check for errors. This will block until the server
 		// is shutdown.
-		fmt.Println("Starting Auth Node...")
-		if err := server.Run(fmt.Sprintf(":%s", os.Getenv("AUTH_PORT")), server.RegisterRoutes); !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("Error running Auth Node: %v", err)
+		fmt.Println("Starting Remote DB Node...")
+		if err := server.Run(fmt.Sprintf(":%s", os.Getenv("DB_PORT")), server.RegisterRoutes); !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("Error running Remote DB Node: %v", err)
 		}
 	}()
 
@@ -68,7 +66,7 @@ func main() {
 
 	// Shutdown the server. This will block until the server is shutdown.
 	if err := server.SafeShutdown(shutdownCtx); err != nil {
-		log.Fatalf("\n Auth Node shutdown failed: %v", err)
+		log.Fatalf("\n Remote DB Node shutdown failed: %v", err)
 	}
-	log.Println("\n Auth Node shutdown safely completed")
+	log.Println("\n Remote DB Node shutdown safely completed")
 }
