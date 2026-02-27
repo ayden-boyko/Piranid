@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/redis/go-redis/v9"
+	"github.com/go-redis/redis/v9"
 )
 
 type Node struct {
@@ -44,6 +44,10 @@ func (s *Node) SetDB(newDB interface{}) {
 }
 
 func (s *Node) GetDB() interface{} { return s.DB }
+
+func (s *Node) GetCache() *redis.Client { return s.cache }
+
+func (s *Node) SetCache(newCache *redis.Client) { s.cache = newCache }
 
 // Run runs the HTTPServer on the given port.
 //

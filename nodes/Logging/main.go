@@ -15,8 +15,8 @@ import (
 	utils "Piranid/pkg"
 
 	core "github.com/ayden-boyko/Piranid/nodes/Logging/loggingcore"
+	"github.com/redis/go-redis/v9"
 
-	"github.com/go-redis/redis"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 )
 
@@ -24,11 +24,13 @@ func main() {
 	// Create a new HTTP server. This server will be responsible for running the
 	// API and handling requests.
 	fmt.Println("Creating a new Logging Node...")
-	server := &core.LoggingNode{Node: node.NewNode(), Buffer: redis.NewClient(&redis.Options{
+	server := &core.LoggingNode{Node: node.NewNode(), Service_ID: utils.NewServiceID("LOGS")}
+
+	server.Node.SetCache(redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("localhost:%s", os.Getenv("REDIS_PORT")),
 		Password: "", // no password set
 		DB:       0,  // use default DB
-	}), Service_ID: utils.NewServiceID("LOGS")}
+	}))
 
 	server.SetDB(influxdb2.NewClient(fmt.Sprintf("http://localhost:%s", os.Getenv("DB_PORT")), os.Getenv("DB_TOLKEN")))
 	fmt.Println("Database created...")

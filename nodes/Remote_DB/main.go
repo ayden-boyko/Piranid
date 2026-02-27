@@ -16,7 +16,7 @@ import (
 
 	core "github.com/ayden-boyko/Piranid/nodes/Remote_DB/dbcore"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 	_ "modernc.org/sqlite"
 )
 
@@ -39,7 +39,7 @@ func main() {
 		Password: "", // no password set
 		DB:       0,  // use default DB
 	})
-	server.Cache = redisClient
+	server.Node.SetCache(redisClient)
 
 	// Run the server in a separate goroutine. This allows the server to run
 	// concurrently with the other code.

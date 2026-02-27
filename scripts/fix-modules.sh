@@ -4,7 +4,7 @@
 cat > nodes/Event_Queue/go.mod << 'EOF'
 module github.com/ayden-boyko/Piranid/nodes/Event_Queue
 
-go 1.21
+go 1.24
 
 require (
     Piranid/pkg v0.0.0
@@ -19,7 +19,7 @@ EOF
 cat > nodes/Auth/go.mod << 'EOF'
 module github.com/ayden-boyko/Piranid/nodes/Auth
 
-go 1.21
+go 1.24
 
 require (
     Piranid/pkg v0.0.0
@@ -32,7 +32,7 @@ EOF
 cat > nodes/Logging/go.mod << 'EOF'
 module github.com/ayden-boyko/Piranid/nodes/Logging
 
-go 1.21
+go 1.24
 
 require (
     Piranid/pkg v0.0.0
@@ -45,7 +45,7 @@ EOF
 cat > nodes/Notifications/go.mod << 'EOF'
 module github.com/ayden-boyko/Piranid/nodes/Notifications
 
-go 1.21
+go 1.24
 
 require (
     Piranid/pkg v0.0.0
@@ -54,12 +54,27 @@ require (
 replace Piranid/pkg => ../../pkg
 EOF
 
+# Fix Notifications
+cat > nodes/Remote_DB/go.mod << 'EOF'
+module github.com/ayden-boyko/Piranid/nodes/Remote_DB
+
+go 1.24
+
+require (
+    Piranid/pkg v0.0.0
+)
+
+replace Piranid/pkg => ../../pkg
+EOF
+
+
 # Now tidy everything
 echo "Running go mod tidy on all modules..."
 cd nodes/Event_Queue && go mod tidy && cd ../..
 cd nodes/Auth && go mod tidy && cd ../..
 cd nodes/Logging && go mod tidy && cd ../..
 cd nodes/Notifications && go mod tidy && cd ../..
+cd nodes/Remote_DB && go mod tidy && cd ../..
 
 echo "Syncing workspace..."
 go work sync

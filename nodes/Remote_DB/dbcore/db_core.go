@@ -6,14 +6,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-
-	"github.com/go-redis/redis/v8"
 )
 
 type DBNode struct {
 	*node.Node
 	Service_ID string
-	Cache      *redis.Client
 }
 
 // TODO Caching

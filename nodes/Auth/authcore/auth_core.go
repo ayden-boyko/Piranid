@@ -9,8 +9,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/go-redis/redis"
-
 	data_manager "Piranid/pkg/DataManager"
 
 	handler "github.com/ayden-boyko/Piranid/nodes/Auth/handlers"
@@ -21,7 +19,6 @@ import (
 type AuthNode struct {
 	*node.Node
 	Service_ID string
-	Cache      *redis.Client
 }
 
 func (n *AuthNode) GetServiceID() string { return n.Service_ID }

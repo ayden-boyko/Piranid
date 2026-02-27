@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-redis/redis"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api"
 )
@@ -16,7 +15,6 @@ import (
 type LoggingNode struct {
 	*node.Node // embedding Node
 	writeAPI   api.WriteAPI
-	Buffer     *redis.Client
 	Service_ID string
 }
 
