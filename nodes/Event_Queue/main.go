@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -15,90 +14,32 @@ import (
 	node "Piranid/node"
 	utils "Piranid/pkg"
 
+	core "github.com/ayden-boyko/Piranid/nodes/Event_Queue/eventcore"
+
 	_ "modernc.org/sqlite"
+
+	amqp "github.com/rabbitmq/amqp091-go"
 )
-
-type EventNode struct {
-	*node.Node
-	service_ID string
-}
-
-// use sqlite db for state
-// ! must use dockerized rabbitmq server
-
-//TODO Your service could listen for special `control` or `configuration events on a management queue or exchange.
-// When it receives an event describing a new topic and binding, it would create them in RabbitMQ accordingly
-
-//! SEPARATE QUEUE FOR 2FA
-
-func (n *EventNode) GetServiceID() string { return n.service_ID }
-
-func (n *EventNode) RegisterRoutes() {
-	// TODO Actual route registration for logging server
-	n.Node.Router.HandleFunc("/event_test", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("Event recieved...")
-		fmt.Fprint(w, "recieved")
-	})
-
-}
-
-func (l *EventNode) ShutdownDB() error {
-	db := l.Node.GetDB()
-	if sqliteDB, ok := db.(*sql.DB); ok {
-		sqliteDB.Close()
-		fmt.Println("Database closed...")
-		return nil
-	}
-	return errors.New("database is not *sql.DB, is type " + fmt.Sprintf("%T", db))
-}
-
-// SafeShutdown is a function that gracefully stops the server and closes the database connection.
-func (n *EventNode) SafeShutdown(ctx context.Context) error {
-	// Shutdown the server
-	if err := n.Server.Shutdown(ctx); err != nil {
-		return err
-	}
-
-	// Close the database connection
-	if err := n.ShutdownDB(); err != nil {
-		return err
-	}
-	return nil
-}
 
 // Code for Auth node
 func main() {
 	// Create a new HTTP server. This server will be responsible for sending
 	// notifications
-	server := &EventNode{Node: node.NewNode(), service_ID: utils.NewServiceID("EVNT")}
+	server := &core.EventNode{Node: node.NewNode(), Service_ID: utils.NewServiceID("EVNT")}
 
 	fmt.Println("Event Node created...")
-	fmt.Println("Initializing database...")
 
-	db, err := sql.Open("sqlite", "./Event_DB.db")
+	fmt.Println("Dialing Message Queue...")
+	// TODO CHANGE THIS, use the right route
+	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
 	if err != nil {
-		log.Fatalf("Error opening database: %v", err)
-	}
-	fmt.Println("Database initialized...")
-
-	server.Node.SetDB(db)
-
-	// Read the contents of the initfile
-	sqlScript, err := os.ReadFile("./Schema.sql")
-	if err != nil {
-		log.Fatalf("Error reading SQL script: %v", err)
+		log.Panicf("%s: %s", "Failed to connect to RabbitMQ", err)
 	}
 
-	// Execute the SQL script to initialize the database
-	db, ok := server.Node.GetDB().(*sql.DB)
-	if !ok {
-		log.Fatalf("Error, expected server.Node.GetDB() to be of type *sql.DB, but got %T", server.Node.GetDB())
-	}
-	_, err = db.Exec(string(sqlScript))
-	if err != nil {
-		log.Fatalf("Error executing SQL script: %v, error within %s", err, string(sqlScript))
-	}
-	fmt.Println("Query executed...")
+	defer conn.Close()
+
+	// Register Routes
+	server.RegisterRoutes(conn)
 
 	// Run the server in a separate goroutine. This allows the server to run
 	// concurrently with the other code.
@@ -106,7 +47,7 @@ func main() {
 		// Run the server and check for errors. This will block until the server
 		// is shutdown.
 		fmt.Println("Starting Event Node...")
-		if err := server.Run(fmt.Sprintf(":%s", os.Getenv("EVENT_QUEUE_PORT")), server.RegisterRoutes); !errors.Is(err, http.ErrServerClosed) {
+		if err := server.Run(fmt.Sprintf(":%s", os.Getenv("EVENT_QUEUE_PORT")), func() {}); !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("Error running Event Node: %v", err)
 		}
 	}()
@@ -123,6 +64,7 @@ func main() {
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer shutdownCancel()
 
+	// TODO, look into if queues and channels need to be safely shutdown, and if so, how
 	// Shutdown the server. This will block until the server is shutdown.
 	if err := server.SafeShutdown(shutdownCtx); err != nil {
 		log.Fatalf("\n Event Node shutdown failed: %v", err)

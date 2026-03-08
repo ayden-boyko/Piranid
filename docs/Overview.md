@@ -30,16 +30,13 @@ Each Pi Zero 2W functions as a worker node, running containerized microservices 
 ## Microservice Deployment and Management
 
 1. **Microservice Deployment:**
-
    - A YAML manifest is submitted to the API server on the Pi 4B.
    - The scheduler assigns the microservice to a Pi Zero 2W based on resource availability.
 
 2. **Service Discovery & Communication:**
-
    - The Pi 4B manages service discovery, ensuring microservices running on different Pi Zero 2Ws can communicate seamlessly.
 
 3. **Scaling and Load Balancing:**
-
    - When a microservice needs to scale, the Pi 4B distributes traffic across multiple instances on different Pi Zero 2Ws.
 
 4. **Zero-Downtime Updates:**
@@ -57,6 +54,7 @@ Each microservice runs in its own Docker container, deployed across different Ra
 - **Notification Service:** Handles sending notifications to users.
 - **Message Queue Service:** Handles asynchronus messages and events between services.
 - **Logging & Monitoring Service:** Centralizes log collection and system monitoring.
+- **Remote DataBase Service:** Handles Data from the other services
 
 ---
 

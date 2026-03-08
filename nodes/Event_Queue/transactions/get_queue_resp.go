@@ -1,8 +1,8 @@
 package internal
 
-type AddServiceRequest struct {
-	ServiceId string   `json:"service_id"`
+type GetQueueResponse struct {
 	Name      string   `json:"name"`
+	ServiceId string   `json:"service_id"`
 	Loggable  bool     `json:"loggable"`
 	Tags      []string `json:"tags"`
 }

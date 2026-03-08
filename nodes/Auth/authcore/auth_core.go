@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	data_manager "Piranid/pkg/DataManager"
 
@@ -24,6 +25,7 @@ type AuthNode struct {
 func (n *AuthNode) GetServiceID() string { return n.Service_ID }
 
 // TODO Caching
+// TODO use redirect handler for the redirect route
 
 func (n *AuthNode) RegisterRoutes() {
 	db, ok := n.Node.GetDB().(*sql.DB)
@@ -43,35 +45,37 @@ func (n *AuthNode) RegisterRoutes() {
 	}
 	log.Printf("Manager created, %v", auth_code_manager)
 
-	n.Node.Router.HandleFunc("/auth_test", handler.AuthTestHandler)
-	n.Node.Router.HandleFunc("/auth", func(w http.ResponseWriter, r *http.Request) {
+	api_ver := os.Getenv("API_VERSION")
+
+	n.Node.Router.HandleFunc(fmt.Sprintf("/api/%s/auth_test", api_ver), handler.AuthTestHandler)
+	n.Node.Router.HandleFunc(fmt.Sprintf("/api/%s/signin", api_ver), func(w http.ResponseWriter, r *http.Request) {
 		if err := handler.AuthHandler(w, r); err != nil {
 			log.Printf("Error in Auth handler: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
 	})
-	n.Node.Router.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+	n.Node.Router.HandleFunc(fmt.Sprintf("/api/%s/login", api_ver), func(w http.ResponseWriter, r *http.Request) {
 		if err := handler.LoginHandler(w, r, credentials_manager, auth_code_manager); err != nil {
 			log.Printf("Error in Login handler: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
 	})
-	n.Node.Router.HandleFunc("/token", func(w http.ResponseWriter, r *http.Request) {
+	n.Node.Router.HandleFunc(fmt.Sprintf("/api/%s/token", api_ver), func(w http.ResponseWriter, r *http.Request) {
 		if err := handler.TokenHandler(w, r, credentials_manager, auth_code_manager); err != nil {
 			log.Printf("Error in Token handler: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
 	})
 
-	n.Node.Router.HandleFunc("/Sign_up", func(w http.ResponseWriter, r *http.Request) {
+	n.Node.Router.HandleFunc(fmt.Sprintf("/api/%s/signup", api_ver), func(w http.ResponseWriter, r *http.Request) {
 		if err := handler.SignUpHandler(w, r, credentials_manager); err != nil {
 			log.Printf("Error in SignUp handler: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
 	})
 
-	n.Node.Router.HandleFunc("/logout", handler.LogoutHandler)
-	n.Node.Router.HandleFunc("/userinfo", handler.UserInfoHandler)
+	n.Node.Router.HandleFunc(fmt.Sprintf("/api/%s/signout", api_ver), handler.LogoutHandler)
+	n.Node.Router.HandleFunc(fmt.Sprintf("/api/%s/user_info", api_ver), handler.UserInfoHandler)
 }
 
 func (l *AuthNode) ShutdownDB() error {
