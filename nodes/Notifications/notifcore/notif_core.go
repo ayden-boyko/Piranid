@@ -169,7 +169,6 @@ func (n *NotificationNode) StoreNotif(ctx context.Context, entry model.NotifEntr
 
 // ! NOT NEEDED, NO HTTP happening, set up messager in node startup in main
 func (n *NotificationNode) RegisterRoutes() {
-	// TODO Actual route registration for logging server
 	// TODO set up adding and removing from db
 	// TODO, add notif to db before sending
 	// TODO add notif to cache before sending, once sent remove from cache

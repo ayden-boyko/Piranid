@@ -25,8 +25,6 @@ type AuthNode struct {
 func (n *AuthNode) GetServiceID() string { return n.Service_ID }
 
 // TODO Caching
-// TODO use redirect handler for the redirect route
-
 func (n *AuthNode) RegisterRoutes() {
 	db, ok := n.Node.GetDB().(*sql.DB)
 	if !ok {
