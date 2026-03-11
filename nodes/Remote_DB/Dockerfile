@@ -1,4 +1,4 @@
-FROM golang:1.24-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 WORKDIR /app
 
@@ -11,7 +11,8 @@ WORKDIR /app/nodes/Remote_DB
 # Build the binary
 RUN go build -o /app/remote_db .
 
-FROM alpine:latest
+FROM golang:1.26-alpine
+
 WORKDIR /app
 COPY --from=builder /app/remote_db .
 COPY --from=builder /app/nodes/Remote_DB/database/* /app/

@@ -1,4 +1,4 @@
-FROM golang:1.24-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 WORKDIR /app
 
@@ -11,7 +11,8 @@ WORKDIR /app/nodes/Notifications
 # Build the binary
 RUN go build -o /app/notification_server .
 
-FROM alpine:latest
+FROM golang:1.26-alpine
+
 WORKDIR /app
 COPY --from=builder /app/notification_server .
 COPY --from=builder /app/nodes/Notifications/database/* /app/

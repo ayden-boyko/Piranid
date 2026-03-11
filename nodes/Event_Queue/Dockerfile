@@ -1,4 +1,4 @@
-FROM golang:1.24-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 WORKDIR /app
 
@@ -10,8 +10,8 @@ WORKDIR /app/nodes/Event_Queue
 
 # Build the binary
 RUN go build -o /app/event_server .
+FROM golang:1.26-alpine
 
-FROM alpine:latest
 WORKDIR /app
 COPY --from=builder /app/event_server .
 COPY --from=builder /app/nodes/Event_Queue/database/* /app/
