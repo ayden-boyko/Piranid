@@ -1,0 +1,48 @@
+services:
+  Auth-Service:
+    build:
+      context: ../Auth-Service
+      dockerfile: ../nodes/Auth/AUTH.Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - TODO
+    depends_on:
+      # - Database-Service
+      - Event-Queue-Service
+  Event-Queue-Service:
+    build:
+      context: ../Event-Queue-Service
+      dockerfile: ../nodes/Event_Queue/EVENT.Dockerfile
+    ports:
+      - "8002:8002"
+    environment:
+      - TODO
+  # Log-Service:
+  #   build:
+  #     context: ../Log-Service
+  #     dockerfile: ../nodes/Logging/LOG.Dockerfile
+  #   environment:
+  #     - TODO
+  #   ports:
+  #     - "8003:8003"
+  #   depends_on:
+  #     # - Database-Service
+  #     - Event-Queue-Service
+  Notification-Service:
+    build:
+      context: ../Notification-Service
+      dockerfile: ../nodes/Notifications/NOTIF.Dockerfile
+    ports:
+      - "8004:8004"
+    environment:
+      - TODO
+    depends_on:
+      # - Database-Service
+      - Event-Queue-Service
+  # Database-Service:
+  #   build:
+  #     context: ../Database-Service
+  #     dockerfile: ../nodes/Database/DATABASE.Dockerfile
+  #   environment:
+  #     - TODO

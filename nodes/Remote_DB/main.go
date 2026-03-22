@@ -30,6 +30,7 @@ func main() {
 
 	// TODO set up postgres DB
 	// create sqlite DB, run schema
+	// todo, iterate though configs or something to set up all DBs
 	utils.SetUpDB(server.Node, "postgres", "./Auth_DB.db", "./Schema.sql")
 	utils.SetUpDB(server.Node, "postgres", "./Logging_DB.db", "./Schema.sql")
 
