@@ -25,6 +25,6 @@ WORKDIR /app
 RUN ls -l /app
 
 # Set environment variables (as before)
-ENV EVENT_QUEUE_PORT=8002
+ENV EVENT_QUEUE_PORT=8082
 
 CMD ["./event_server"]

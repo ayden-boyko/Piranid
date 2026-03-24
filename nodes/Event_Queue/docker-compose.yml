@@ -11,6 +11,6 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      - "8082:8082"
     environment:
-      - EVENT_QUEUE_PORT=8080S
+      - EVENT_QUEUE_PORT=8082

@@ -31,7 +31,7 @@ func main() {
 
 	fmt.Println("Dialing Message Queue...")
 	// TODO CHANGE THIS, use the right route
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	conn, err := amqp.Dial("amqp://guest:guest@rabbitmq:5672/")
 	if err != nil {
 		log.Panicf("%s: %s", "Failed to connect to RabbitMQ", err)
 	}
