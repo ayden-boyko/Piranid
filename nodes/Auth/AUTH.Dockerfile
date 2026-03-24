@@ -26,6 +26,6 @@ WORKDIR /app
 RUN ls -l /app
 
 # Set environment variables (as before)
-ENV AUTH_PORT=8001
+ENV AUTH_PORT=8081
 
 CMD ["./auth_server"]

@@ -20,12 +20,12 @@ COPY --from=builder /app/nodes/Remote_DB/database/* /app/
 #give permissions to the binary
 RUN chmod +x remote_db
 # Expose port 8081.
-EXPOSE 8081
+EXPOSE 8085
 
 WORKDIR /app
 RUN ls -l /app
 
 # Set environment variables (as before)
-ENV REMOTE_DB_PORT=8001
+ENV REMOTE_DB_PORT=8085
 
 CMD ["./remote_db"]
