@@ -20,7 +20,9 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-// Code for Auth node
+// TODO: add ssl certs
+
+// Code for DB node
 func main() {
 	// Create a new HTTP server. This server will be responsible for sending
 	// notifications

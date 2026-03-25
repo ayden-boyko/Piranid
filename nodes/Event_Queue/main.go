@@ -21,7 +21,9 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-// Code for Auth node
+// TODO: add ssl certs
+
+// Code for Event node
 func main() {
 	// Create a new HTTP server. This server will be responsible for sending
 	// notifications
@@ -30,7 +32,6 @@ func main() {
 	fmt.Println("Event Node created...")
 
 	fmt.Println("Dialing Message Queue...")
-	// TODO CHANGE THIS, use the right route
 	conn, err := amqp.Dial("amqp://guest:guest@rabbitmq:5672/")
 	if err != nil {
 		log.Panicf("%s: %s", "Failed to connect to RabbitMQ", err)

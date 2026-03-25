@@ -20,12 +20,16 @@ import (
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 )
 
+// TODO: add ssl certs
+// TODO: setup connection to event service
+
 func main() {
 	// Create a new HTTP server. This server will be responsible for running the
 	// API and handling requests.
 	fmt.Println("Creating a new Logging Node...")
 	server := &core.LoggingNode{Node: node.NewNode(), Service_ID: utils.NewServiceID("LOGS")}
 
+	// todo create password for redis
 	server.Node.SetCache(redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("localhost:%s", os.Getenv("REDIS_PORT")),
 		Password: "", // no password set

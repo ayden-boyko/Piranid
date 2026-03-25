@@ -26,7 +26,9 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-// Code for Auth node
+// TODO: add ssl certs
+
+// Code for Notif node
 func main() {
 	fmt.Println("Creating a new Notification Node...")
 	client := courier.CreateClient(
@@ -62,7 +64,7 @@ func main() {
 		}
 	}()
 
-	// TODO: set up message queue
+	// TODO: set up message queue connection
 	// Run the M in a separate goroutine, this allows the MQ to run concurrently
 	go func() {
 	}()
