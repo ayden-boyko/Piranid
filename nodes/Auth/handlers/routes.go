@@ -23,6 +23,9 @@ func AuthTestHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "received")
 }
 
+// TODO: FIX THIS FLOW
+// https://datatracker.ietf.org/doc/html/rfc6749#section-1.2
+
 func SignUpHandler(w http.ResponseWriter, r *http.Request, dm *data_manager.DataManagerImpl[model.AuthEntry]) error {
 	fmt.Println("Sign up received...")
 	fmt.Fprint(w, "received")
