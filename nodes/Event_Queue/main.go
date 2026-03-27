@@ -31,8 +31,15 @@ func main() {
 
 	fmt.Println("Event Node created...")
 
+	// get the port for the message queue from the environment variable, and connect to it
+	// TODO: add ssl certs
+	MQ_PORT := os.Getenv("RABBIT_MQ_PORT")
+	if MQ_PORT == "" {
+		log.Panic("RABBIT_MQ_PORT environment variable not set")
+	}
+
 	fmt.Println("Dialing Message Queue...")
-	conn, err := amqp.Dial("amqp://guest:guest@rabbitmq:5672/")
+	conn, err := amqp.Dial(fmt.Sprintf("amqp://guest:guest@rabbitmq:%s/", MQ_PORT))
 	if err != nil {
 		log.Panicf("%s: %s", "Failed to connect to RabbitMQ", err)
 	}
