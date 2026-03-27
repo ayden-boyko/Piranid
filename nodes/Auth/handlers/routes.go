@@ -20,11 +20,11 @@ import (
 
 func AuthTestHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Auth received...")
+	w.WriteHeader(http.StatusOK)
 	fmt.Fprint(w, "received")
 }
 
-// TODO: FIX THIS FLOW
-// https://datatracker.ietf.org/doc/html/rfc6749#section-1.2
+// TODO: ADD PKCE, https://medium.com/@dipakkrdas/pkce-explained-securing-oauth-without-the-secrets-bbaf83f04959
 
 func SignUpHandler(w http.ResponseWriter, r *http.Request, dm *data_manager.DataManagerImpl[model.AuthEntry]) error {
 	fmt.Println("Sign up received...")
@@ -54,14 +54,40 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, dm *data_manager.Data
 	return nil
 }
 
+// handles requests for user sign up,
+// showing sign up page
+func SignUpPageHandler(w http.ResponseWriter, r *http.Request, templatesFS embed.FS) error {
+	fmt.Println("Sign up received...")
+	fmt.Fprint(w, "received")
+	var req transactions.SignUpPage
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return errors.New("error decoding request body")
+	}
+
+	tmpl, err := template.ParseFS(templatesFS, "templates/SignUpPage.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return errors.New("error parsing template")
+	}
+	err = tmpl.Execute(w, req)
+	if err != nil {
+		http.Error(w, "Template execution error", http.StatusInternalServerError)
+		return err
+	}
+
+	return nil
+}
+
 // Handles requests for user authorization,
 // showing consent screens and issuing authorization grants.
 
 // user hits login page and login page redirects to auth server login page,
 // once user enters info the auth code is sent to the client
-func AuthHandler(w http.ResponseWriter, r *http.Request) error {
+func AuthPageHandler(w http.ResponseWriter, r *http.Request, templatesFS embed.FS) error {
 	var req transactions.ConsentPage
-	var templatesFS embed.FS
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -116,8 +142,6 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, ae *data_manager.DataM
 	}
 
 	fmt.Println("Login received...")
-	fmt.Fprint(w, "received")
-
 	// create auth code JWT
 	token, time, err := utils.CreateToken(entry.ClientId)
 	if err != nil {
@@ -168,6 +192,13 @@ func TokenHandler(w http.ResponseWriter, r *http.Request, ae *data_manager.DataM
 	if auth_code.Expires < time.Now().Unix() {
 		http.Error(w, "Auth code expired", http.StatusBadRequest)
 		return errors.New("auth code expired")
+	}
+
+	// at this point, auth code is valid
+	// remove auth code from database
+	if err := ace.DeleteData(model.AuthCodeEntry{AuthCode: req.Authcode}, utils.AuthCodeDeleter); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return errors.New("error removing auth code from database")
 	}
 
 	// get user auth_entry

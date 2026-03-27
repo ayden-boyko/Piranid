@@ -4,6 +4,7 @@ import (
 	"Piranid/node"
 	"context"
 	"database/sql"
+	"embed"
 	"errors"
 	"fmt"
 	"log"
@@ -25,7 +26,7 @@ type AuthNode struct {
 func (n *AuthNode) GetServiceID() string { return n.Service_ID }
 
 // TODO Caching
-func (n *AuthNode) RegisterRoutes() {
+func (n *AuthNode) RegisterRoutes(template embed.FS) {
 	db, ok := n.Node.GetDB().(*sql.DB)
 	if !ok {
 		log.Printf("Error, expected n.Node.GetDB() to be of type *sql.DB, but got %T", n.Node.GetDB())
@@ -47,7 +48,7 @@ func (n *AuthNode) RegisterRoutes() {
 
 	n.Node.Router.HandleFunc(fmt.Sprintf("/api/%s/auth_test", api_ver), handler.AuthTestHandler)
 	n.Node.Router.HandleFunc(fmt.Sprintf("/api/%s/signin", api_ver), func(w http.ResponseWriter, r *http.Request) {
-		if err := handler.AuthHandler(w, r); err != nil {
+		if err := handler.AuthPageHandler(w, r, template); err != nil {
 			log.Printf("Error in Auth handler: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
@@ -61,6 +62,13 @@ func (n *AuthNode) RegisterRoutes() {
 	n.Node.Router.HandleFunc(fmt.Sprintf("/api/%s/token", api_ver), func(w http.ResponseWriter, r *http.Request) {
 		if err := handler.TokenHandler(w, r, credentials_manager, auth_code_manager); err != nil {
 			log.Printf("Error in Token handler: %v", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		}
+	})
+
+	n.Node.Router.HandleFunc(fmt.Sprintf("/api/%s/signup_page", api_ver), func(w http.ResponseWriter, r *http.Request) {
+		if err := handler.SignUpPageHandler(w, r, template); err != nil {
+			log.Printf("Error in SignUp handler: %v", err)
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
 	})

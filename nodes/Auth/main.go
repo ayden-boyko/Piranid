@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"embed"
 	"errors"
 	"fmt"
 	"log"
@@ -21,6 +22,9 @@ import (
 )
 
 // TODO: add ssl certs
+
+//go:embed templates/*
+var TemplatesFS embed.FS
 
 // Code for Auth node
 func main() {
@@ -51,7 +55,9 @@ func main() {
 		// Run the server and check for errors. This will block until the server
 		// is shutdown.
 		fmt.Println("Starting Auth Node...")
-		if err := server.Run(fmt.Sprintf(":%s", os.Getenv("AUTH_PORT")), server.RegisterRoutes); !errors.Is(err, http.ErrServerClosed) {
+		if err := server.Run(fmt.Sprintf(":%s", os.Getenv("AUTH_PORT")), func() {
+			server.RegisterRoutes(TemplatesFS) // TemplatesFS is captured here
+		}); !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("Error running Auth Node: %v", err)
 		}
 	}()
