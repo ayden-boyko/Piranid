@@ -34,12 +34,10 @@ func main() {
 
 	fmt.Println("Auth Node created...")
 
-	// TODO: Connect to Remote DB
-	// instead of local path, use remote instead.
-	// SetUpDB(node, "sqlite", "sqlite://user:pass@192.168.x.x:5432/auth_db", "schema.sql")
-	utils.SetUpDB(server.Node, "sqlite", "./Auth_DB.db", "./Schema.sql")
-
-	log.Fatalf("Error connecting to Remote DB: %v", errors.New("Not connected to remote DB"))
+	err := utils.SetUpDB(server.Node, "sqlite", "sqlite://user:pass@192.168.x.x:5432/auth_db", "schema.sql")
+	if err != nil {
+		log.Fatalf("Error setting up DB: %v", err)
+	}
 
 	// Create a new Redis client
 	redisClient := redis.NewClient(&redis.Options{

@@ -35,22 +35,27 @@ func (n *NotificationNode) HandleNotifSend(ctx context.Context, entry model.Noti
 		return err
 	}
 
-	method, err := entry.GetMethod()
-	if err != nil {
-		return err
-	}
-
 	contact, err := entry.GetContact()
 	if err != nil {
 		return err
 	}
 
-	template, err := entry.GetTemplate()
+	method, err := entry.GetMethod()
 	if err != nil {
 		return err
 	}
 
 	data, err := entry.GetData()
+	if err != nil {
+		return err
+	}
+
+	importance, err := entry.GetImportance()
+	if err != nil {
+		return err
+	}
+
+	template, err := entry.GetTemplate()
 	if err != nil {
 		return err
 	}
@@ -66,6 +71,11 @@ func (n *NotificationNode) HandleNotifSend(ctx context.Context, entry model.Noti
 				},
 				"template": template,
 				"data":     data,
+				"metadata": map[string]string{
+					"importance": fmt.Sprint(importance),
+				},
+				// TODO add more fields as needed, such as title, body, etc.
+				// these can be added to the template in courier and then passed in the data field here
 			},
 		},
 	)

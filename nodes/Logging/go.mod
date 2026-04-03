@@ -6,7 +6,6 @@ toolchain go1.24.9
 
 require (
 	Piranid/pkg v0.0.0
-	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/influxdata/influxdb-client-go/v2 v2.14.0
 )
 

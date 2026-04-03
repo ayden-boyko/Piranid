@@ -51,7 +51,10 @@ func main() {
 	}
 
 	// create sqlite DB, run schema
-	utils.SetUpDB(server.Node, "sqlite", "./Notification_DB.db", "./Schema.sql")
+	err = utils.SetUpDB(server.Node, "sqlite", "./Notification_DB.db", "./Schema.sql")
+	if err != nil {
+		log.Fatalf("failed to set up DB: %v", err)
+	}
 
 	// Run the server in a separate goroutine. This allows the server to run
 	// concurrently with the other code.
@@ -64,10 +67,12 @@ func main() {
 		}
 	}()
 
-	// TODO: set up message queue connection
-	// Run the M in a separate goroutine, this allows the MQ to run concurrently
-	go func() {
-	}()
+	ctx := context.Background()
+
+	// Start the message queue listener in a separate goroutine. This will allow
+	// the server to listen for messages while still being able to shut down
+	// gracefully.
+	go server.StartMQListener(ctx)
 
 	// Create a channel to receive signals. This will allow us to gracefully
 	// shutdown the server when it receives a SIGINT or SIGTERM.

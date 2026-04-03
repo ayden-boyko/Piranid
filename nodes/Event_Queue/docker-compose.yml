@@ -6,6 +6,9 @@ services:
       - "15672:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+  # Might not need the event-queue service,
+  # run this on the host machine instead of in a container
+  # may save memory and resources
   event-queue:
     build:
       context: .

@@ -50,11 +50,16 @@ Each microservice runs in its own Docker container, deployed across different Ra
 
 ### Core Microservices:
 
-- **User Authentication Service:** Handles user registration, login, and token management.
-- **Notification Service:** Handles sending notifications to users.
+on Pi 4B
+
 - **Message Queue Service:** Handles asynchronus messages and events between services.
 - **Logging & Monitoring Service:** Centralizes log collection and system monitoring.
-- **Remote DataBase Service:** Handles Data from the other services
+
+on Pi 02w
+
+- **User Authentication Service:** Handles user registration, login, and token management.
+- **Notification Service:** Handles sending notifications to users.
+- **MQTT Broker Service** Handles Events from IOT devices
 
 ---
 
