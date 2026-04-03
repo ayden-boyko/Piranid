@@ -32,7 +32,6 @@ func main() {
 	fmt.Println("Event Node created...")
 
 	// get the port for the message queue from the environment variable, and connect to it
-	// TODO: add ssl certs
 	MQ_PORT := os.Getenv("RABBIT_MQ_PORT")
 	if MQ_PORT == "" {
 		log.Panic("RABBIT_MQ_PORT environment variable not set")
