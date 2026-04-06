@@ -74,7 +74,6 @@ func (n *NotificationNode) HandleNotifSend(ctx context.Context, entry model.Noti
 				"metadata": map[string]string{
 					"importance": fmt.Sprint(importance),
 				},
-				// TODO add more fields as needed, such as title, body, etc.
 				// these can be added to the template in courier and then passed in the data field here
 			},
 		},

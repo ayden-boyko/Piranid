@@ -71,7 +71,6 @@ func main() {
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer shutdownCancel()
 
-	// TODO, look into if queues and channels need to be safely shutdown, and if so, how
 	// Shutdown the server. This will block until the server is shutdown.
 	if err := server.SafeShutdown(shutdownCtx); err != nil {
 		log.Fatalf("\n Event Node shutdown failed: %v", err)

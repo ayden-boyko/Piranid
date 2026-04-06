@@ -5,13 +5,13 @@ import (
 	"errors"
 )
 
-// TODO double check that methods are courier compatable
 type ContactMethod string
 
 const (
 	Mobile ContactMethod = "Mobile"
 	Email  ContactMethod = "Email"
-	// todo discord, whatsapp, etc (magnum opus: ai agent with voice)?
+	Slack  ContactMethod = "Slack"
+	// other methods can be added here
 )
 
 // AuthEntry extends Entry with auth-specific metadata
