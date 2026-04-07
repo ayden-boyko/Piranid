@@ -7,8 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"net/http"
-	"os"
 
 	model "github.com/ayden-boyko/Piranid/nodes/Notifications/models"
 	"github.com/ayden-boyko/Piranid/nodes/Notifications/utils"
@@ -174,42 +172,6 @@ func (n *NotificationNode) StoreNotif(ctx context.Context, entry model.NotifEntr
 	}
 	err := utils.NotifInserter(dbTx, entry)
 	return err
-}
-
-// ! NOT NEEDED, NO HTTP happening, set up messager in node startup in main
-func (n *NotificationNode) RegisterRoutes() {
-	// TODO set up adding and removing from db
-	// TODO, add notif to db before sending
-	// TODO add notif to cache before sending, once sent remove from cache
-	n.Node.Router.HandleFunc("/notification_test", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("Sending notification...")
-		fmt.Fprint(w, "Sending notification...")
-		client := courier.CreateClient(
-			os.Getenv("COURIER_TOKEN"), nil,
-		)
-		n.Messager = client
-		requestID, err := n.Messager.SendMessage(
-			context.Background(),
-			courier.SendMessageRequestBody{
-				Message: map[string]interface{}{
-					"to": map[string]string{
-						"email": "aydenboyko@gmail.com",
-					},
-					"template": "2GPARRPY3S4WHDKV8G07V5JKNNHZ",
-					"data": map[string]string{
-						"data": "HAHAHA THIS IS TESTING DTATA",
-					},
-				},
-			},
-		)
-
-		if err != nil {
-			log.Fatalln(err)
-		}
-		log.Println(requestID)
-		fmt.Println("Notification sent...")
-	})
-
 }
 
 func (l *NotificationNode) ShutdownDB() error {

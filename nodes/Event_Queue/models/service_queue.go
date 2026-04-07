@@ -18,7 +18,7 @@ func createServiceQueue(serviceId string, name string, loggable bool, tags []str
 		QueueName: name,
 		ServiceId: serviceId,
 		Loggable:  loggable,
-		Tags:      tags,
+		Tags:      make([]string, len(tags)),
 		Queue:     queue,
 	}
 	return newService, nil
