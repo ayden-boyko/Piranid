@@ -14,11 +14,16 @@ type ServiceQueue struct {
 
 // internal methods for creating EMPTY service queues
 func createServiceQueue(serviceId string, name string, loggable bool, tags []string, queue *amqp.Queue) (*ServiceQueue, error) {
+	// create a copy of the tags slice to avoid unintended side effects
+	tag_slice := make([]string, len(tags))
+	copy(tag_slice, tags)
+	// not coping can mutate the original slice,
+	// which can cause unintended side effects if the original slice is used elsewhere in the code
 	newService := &ServiceQueue{
 		QueueName: name,
 		ServiceId: serviceId,
 		Loggable:  loggable,
-		Tags:      make([]string, len(tags)),
+		Tags:      tag_slice,
 		Queue:     queue,
 	}
 	return newService, nil
