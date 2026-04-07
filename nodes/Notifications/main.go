@@ -44,8 +44,13 @@ func main() {
 
 	grpcServer := grpc.NewServer()
 	v1.RegisterNotifierServer(grpcServer, notifHandler)
+	
+	port := os.Getenv("NOTIFICATION_PORT")
+	if port == "" {
+		port = "8084"
+	}
 
-	listener, err := net.Listen("tcp", ":8080")
+	listener, err := net.Listen("tcp", ":" + port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}

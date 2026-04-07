@@ -27,7 +27,6 @@ RUN ls -l /app
 
 # Set environment variables (as before)
 ENV NOTIFICATION_PORT=8084
-ENV COURIER_TOKEN=pk_prod_BY39M20QJHMMV3QWC2MY5MNNB3WQ
 
 
 CMD ["./notification_server"]
