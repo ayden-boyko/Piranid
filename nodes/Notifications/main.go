@@ -2,11 +2,9 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -67,7 +65,7 @@ func main() {
 		// Run the server and check for errors. This will block until the server
 		// is shutdown.
 		fmt.Println("Starting Notification Node...")
-		if err := grpcServer.Serve(listener); !errors.Is(err, http.ErrServerClosed) {
+		if err := grpcServer.Serve(listener); err != nil {
 			log.Fatalf("Error running Notification Node: %v", err)
 		}
 	}()

@@ -17,15 +17,24 @@ spec:
     spec:
       containers:
         - name: notifications
-          image: docker.io/library/piranid-notif:latest
+          image: docker.io/library/piranid-notifications:latest
           imagePullPolicy: Never
           ports:
             - containerPort: 8084
           env:
             - name: NOTIFICATION_SERVICE_PORT
               value: "8084"
+            - name: RABBIT_MQ_PORT
+              value: "5672"
+            - name: EVENT_SERVICE_WORKER_POOL_SIZE
+              value: "5"
             - name: API_VERSION
               value: "v1"
+            - name: COURIER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: courier-secret
+                  key: COURIER_TOKEN
           resources:
             requests:
               memory: "64Mi"
@@ -42,8 +51,9 @@ metadata:
 spec:
   selector:
     app: notifications
-  type: NodePort
+  type: ClusterIP
   ports:
-    - port: 8084
+    - name: grpc
+      port: 8084
       targetPort: 8084
-      nodePort: 30084
+      protocol: TCP
