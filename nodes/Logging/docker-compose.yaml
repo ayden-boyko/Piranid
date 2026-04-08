@@ -1,0 +1,98 @@
+version: "3.8"
+
+networks:
+  logging:
+    driver: bridge
+
+volumes:
+  loki_data:
+  tempo_data:
+  prometheus_data:
+  grafana_data:
+
+services:
+  loki:
+    image: grafana/loki:3.4.2
+    container_name: loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki/config.yaml:/etc/loki/config.yaml
+      - loki_data:/loki
+    command: -config.file=/etc/loki/config.yaml
+    networks:
+      - logging
+
+  promtail:
+    image: grafana/promtail:3.4.2
+    container_name: promtail
+    volumes:
+      - ./promtail/config.yaml:/etc/promtail/config.yaml
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    command: -config.file=/etc/promtail/config.yaml
+    depends_on:
+      - loki
+    networks:
+      - logging
+
+  tempo:
+    image: grafana/tempo:2.7.2
+    container_name: tempo
+    ports:
+      - "3200:3200"
+      - "4417:4417"
+      - "4418:4418"
+    volumes:
+      - ./tempo/config.yaml:/etc/tempo/config.yaml
+      - tempo_data:/tempo
+    command: -config.file=/etc/tempo/config.yaml
+    networks:
+      - logging
+
+  prometheus:
+    image: prom/prometheus:v3.2.1
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/config.yaml:/etc/prometheus/prometheus.yaml
+      - prometheus_data:/prometheus
+    command: --config.file=/etc/prometheus/prometheus.yaml
+    networks:
+      - logging
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.123.0
+    container_name: otel-collector
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "8889:8889"
+    volumes:
+      - ./otel-collector/config.yaml:/etc/otel/config.yaml
+    command: --config=/etc/otel/config.yaml
+    depends_on:
+      - loki
+      - tempo
+      - prometheus
+    networks:
+      - logging
+
+  grafana:
+    image: grafana/grafana:11.6.1
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_USER=admin
+    depends_on:
+      - loki
+      - tempo
+      - prometheus
+    networks:
+      - logging
