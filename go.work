@@ -3,7 +3,6 @@ go 1.26.1
 use (
 	./nodes/Auth
 	./nodes/Event_Queue
-	./nodes/Logging
 	./nodes/Notifications
 	./pkg
 	./pkg/node

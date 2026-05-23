@@ -14,6 +14,7 @@ import (
 
 	node "Piranid/node"
 	utils "Piranid/pkg"
+	telemetry "Piranid/pkg/telemetry"
 
 	core "github.com/ayden-boyko/Piranid/nodes/Auth/authcore"
 
@@ -28,6 +29,11 @@ var TemplatesFS embed.FS
 
 // Code for Auth node
 func main() {
+
+	ctx := context.Background()
+
+	fmt.Println("Creating a new Auth Node...")
+
 	// Create a new HTTP server. This server will be responsible for sending
 	// notifications
 	server := &core.AuthNode{Node: node.NewNode(), Service_ID: utils.NewServiceID("AUTH")}
@@ -46,6 +52,17 @@ func main() {
 		DB:       0,  // use default DB
 	})
 	server.Node.SetCache(redisClient)
+
+	// Set up telemetry
+	collectorAddr := os.Getenv("OTEL_COLLECTOR_ADDR")
+	if collectorAddr == "" {
+		collectorAddr = "localhost:4317"
+	}
+	otelShutdown, err := telemetry.SetupOTelSDK(ctx, "Auth Node", collectorAddr)
+	if err != nil {
+		log.Fatalf("failed to set up telemetry: %v", err)
+	}
+	defer otelShutdown(ctx)
 
 	// Run the server in a separate goroutine. This allows the server to run
 	// concurrently with the other code.
@@ -69,7 +86,7 @@ func main() {
 	<-sigChan
 
 	// Create a context with a timeout to shut down the server.
-	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	shutdownCtx, shutdownCancel := context.WithTimeout(ctx, 10*time.Second)
 	defer shutdownCancel()
 
 	// Shutdown the server. This will block until the server is shutdown.
