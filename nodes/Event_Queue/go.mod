@@ -6,6 +6,7 @@ require (
 	Piranid/node v0.0.0
 	Piranid/pkg v0.0.0
 	github.com/rabbitmq/amqp091-go v1.10.0
+	go.opentelemetry.io/otel v1.43.0
 	modernc.org/sqlite v1.39.1
 )
 
@@ -24,7 +25,6 @@ require (
 	github.com/redis/go-redis/v9 v9.8.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
-	go.opentelemetry.io/otel v1.43.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlplog/otlploggrpc v0.19.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v1.43.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.43.0 // indirect
