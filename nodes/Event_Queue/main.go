@@ -51,7 +51,7 @@ func main() {
 	defer conn.Close()
 
 	// Register Routes
-	server.RegisterRoutes(conn)
+	server.RegisterRoutes(conn, ctx)
 
 	// telemetry setup
 	// Set up telemetry

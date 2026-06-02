@@ -71,7 +71,7 @@ func main() {
 		// is shutdown.
 		fmt.Println("Starting Auth Node...")
 		if err := server.Run(fmt.Sprintf(":%s", os.Getenv("AUTH_PORT")), func() {
-			server.RegisterRoutes(TemplatesFS) // TemplatesFS is captured here
+			server.RegisterRoutes(TemplatesFS, ctx) // TemplatesFS is captured here
 		}); !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("Error running Auth Node: %v", err)
 		}
