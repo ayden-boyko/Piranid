@@ -10,6 +10,7 @@ import (
 
 	handler "github.com/ayden-boyko/Piranid/nodes/Event_Queue/handlers"
 	"github.com/ayden-boyko/Piranid/nodes/Event_Queue/models"
+	"go.uber.org/zap"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -22,7 +23,7 @@ type EventNode struct {
 
 func (n *EventNode) GetServiceID() string { return n.Service_ID }
 
-func (n *EventNode) RegisterRoutes(conn *amqp.Connection, ctx context.Context) {
+func (n *EventNode) RegisterRoutes(conn *amqp.Connection, ctx context.Context, logger *zap.Logger) {
 	api_ver := os.Getenv("API_VERSION")
 
 	if api_ver == "" {
@@ -32,7 +33,7 @@ func (n *EventNode) RegisterRoutes(conn *amqp.Connection, ctx context.Context) {
 	n.Node.Router.HandleFunc(fmt.Sprintf("/api/%s/event_test", api_ver), handler.EventTestHandler)
 
 	n.Node.Router.HandleFunc(fmt.Sprintf("GET /api/%s/services/{service_id}", api_ver), func(w http.ResponseWriter, r *http.Request) {
-		response, err := handler.GetServiceHandler(w, r, &n.Services, ctx)
+		response, err := handler.GetServiceHandler(w, r, &n.Services, ctx, logger)
 		if err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
@@ -42,21 +43,21 @@ func (n *EventNode) RegisterRoutes(conn *amqp.Connection, ctx context.Context) {
 	})
 
 	n.Node.Router.HandleFunc(fmt.Sprintf("POST /api/%s/services/{service_id}", api_ver), func(w http.ResponseWriter, r *http.Request) {
-		err := handler.AddServiceHandler(w, r, &n.Services, conn, ctx)
+		err := handler.AddServiceHandler(w, r, &n.Services, conn, ctx, logger)
 		if err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
 	})
 
 	n.Node.Router.HandleFunc(fmt.Sprintf("DELETE /api/%s/services/{service_id}", api_ver), func(w http.ResponseWriter, r *http.Request) {
-		err := handler.RemoveServiceHandler(w, r, &n.Services, conn, ctx)
+		err := handler.RemoveServiceHandler(w, r, &n.Services, conn, ctx, logger)
 		if err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
 	})
 
 	n.Node.Router.HandleFunc(fmt.Sprintf("GET /api/%s/services/{service_id}/queue/{queue_id}", api_ver), func(w http.ResponseWriter, r *http.Request) {
-		response, err := handler.GetQueueHandler(w, r, &n.Services, ctx)
+		response, err := handler.GetQueueHandler(w, r, &n.Services, ctx, logger)
 		if err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
@@ -66,14 +67,14 @@ func (n *EventNode) RegisterRoutes(conn *amqp.Connection, ctx context.Context) {
 	})
 
 	n.Node.Router.HandleFunc(fmt.Sprintf("POST /api/%s/services/{service_id}/queue/{queue_id}", api_ver), func(w http.ResponseWriter, r *http.Request) {
-		err := handler.AddQueueHandler(w, r, &n.Services, ctx)
+		err := handler.AddQueueHandler(w, r, &n.Services, ctx, logger)
 		if err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}
 	})
 
 	n.Node.Router.HandleFunc(fmt.Sprintf("DELETE/api/%s/services/{service_id}/queue/{queue_id}", api_ver), func(w http.ResponseWriter, r *http.Request) {
-		err := handler.RemoveQueueHandler(w, r, &n.Services, conn, ctx)
+		err := handler.RemoveQueueHandler(w, r, &n.Services, conn, ctx, logger)
 		if err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		}

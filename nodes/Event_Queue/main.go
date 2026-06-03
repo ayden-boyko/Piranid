@@ -34,6 +34,25 @@ func main() {
 	// notifications
 	server := &core.EventNode{Node: node.NewNode(), Service_ID: utils.NewServiceID("EVNT")}
 
+	// telemetry setup
+	// Set up telemetry
+	collectorAddr := os.Getenv("OTEL_COLLECTOR_ADDR")
+	if collectorAddr == "" {
+		collectorAddr = "localhost:4317"
+	}
+	otelShutdown, err := telemetry.SetupOTelSDK(ctx, "Auth Node", collectorAddr)
+	if err != nil {
+		log.Fatalf("failed to set up telemetry: %v", err)
+	}
+	defer otelShutdown(ctx)
+
+	// Set up logging
+	logger, err := telemetry.NewLogger("notifications")
+	if err != nil {
+		log.Fatalf("failed to setup logger: %v", err)
+	}
+	defer logger.Sync()
+
 	fmt.Println("Event Node created...")
 
 	// get the port for the message queue from the environment variable, and connect to it
@@ -51,19 +70,7 @@ func main() {
 	defer conn.Close()
 
 	// Register Routes
-	server.RegisterRoutes(conn, ctx)
-
-	// telemetry setup
-	// Set up telemetry
-	collectorAddr := os.Getenv("OTEL_COLLECTOR_ADDR")
-	if collectorAddr == "" {
-		collectorAddr = "localhost:4317"
-	}
-	otelShutdown, err := telemetry.SetupOTelSDK(ctx, "Auth Node", collectorAddr)
-	if err != nil {
-		log.Fatalf("failed to set up telemetry: %v", err)
-	}
-	defer otelShutdown(ctx)
+	server.RegisterRoutes(conn, ctx, logger)
 
 	// Run the server in a separate goroutine. This allows the server to run
 	// concurrently with the other code.

@@ -9,6 +9,7 @@ import (
 
 	"github.com/ayden-boyko/Piranid/nodes/Event_Queue/models"
 	transactions "github.com/ayden-boyko/Piranid/nodes/Event_Queue/transactions"
+	"go.uber.org/zap"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
@@ -23,7 +24,7 @@ func EventTestHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "received")
 }
 
-func AddServiceHandler(w http.ResponseWriter, r *http.Request, ServiceQueues *models.Services, conn *amqp.Connection, ctx context.Context) error {
+func AddServiceHandler(w http.ResponseWriter, r *http.Request, ServiceQueues *models.Services, conn *amqp.Connection, ctx context.Context, logger *zap.Logger) error {
 	ctx, span := tracer.Start(ctx, "AddServiceHandler")
 	defer span.End()
 
@@ -34,17 +35,21 @@ func AddServiceHandler(w http.ResponseWriter, r *http.Request, ServiceQueues *mo
 		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
-	fmt.Fprint(w, "Adding service...")
+	logger.Info("Adding service...")
 	ch, err := conn.Channel()
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
+
 	//check if services queuse already exist for this service uuid
 	if _, err := ServiceQueues.GetService(req.ServiceId); err == nil {
 		span.SetStatus(codes.Error, "Service already exists")
-		return fmt.Errorf("Service %s already exists", req.ServiceId)
+		span.RecordError(fmt.Errorf("Service %s already exists", req.ServiceId))
+		msg := fmt.Sprintf("Service %s already exists", req.ServiceId)
+		logger.Error(msg)
+		return fmt.Errorf("%s", msg)
 	} else {
 		span.SetStatus(codes.Ok, "")
 		ServiceQueues.AddService(&req, ch)
@@ -52,7 +57,7 @@ func AddServiceHandler(w http.ResponseWriter, r *http.Request, ServiceQueues *mo
 	return nil
 }
 
-func AddQueueHandler(w http.ResponseWriter, r *http.Request, ServiceQueues *models.Services, ctx context.Context) error {
+func AddQueueHandler(w http.ResponseWriter, r *http.Request, ServiceQueues *models.Services, ctx context.Context, logger *zap.Logger) error {
 	ctx, span := tracer.Start(ctx, "AddQueueHandler")
 	defer span.End()
 
@@ -63,33 +68,37 @@ func AddQueueHandler(w http.ResponseWriter, r *http.Request, ServiceQueues *mode
 		span.SetStatus(codes.Error, err.Error())
 		return err
 	}
-	fmt.Fprint(w, "Adding Queue...")
+	logger.Info("Adding Queue...")
 	var service *models.Service
 	//Check if service exists
 	if service, err = ServiceQueues.GetService(req.ServiceId); err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		return fmt.Errorf("Service %s does not exist", req.ServiceId)
+		msg := fmt.Sprintf("Service %s does not exist", req.ServiceId)
+		logger.Error(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	//check if queue already exists
 	if _, err := ServiceQueues.GetServiceQueue(req.ServiceId, req.QueueName); err == nil {
 		span.SetStatus(codes.Error, "Queue already exists")
 		span.RecordError(fmt.Errorf("Queue %s already exists", req.QueueName))
-		return fmt.Errorf("Queue %s already exists", req.QueueName)
+		msg := fmt.Sprintf("Queue %s already exists", req.QueueName)
+		logger.Error(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	span.SetStatus(codes.Ok, "")
 	ServiceQueues.AddServiceQueue(&req, service)
-	fmt.Fprint(w, "Added Queue...")
+	logger.Info("Added Queue...")
 
 	return nil
 }
 
-func GetQueueHandler(w http.ResponseWriter, r *http.Request, ServiceQueues *models.Services, ctx context.Context) (transactions.GetQueueResponse, error) {
+func GetQueueHandler(w http.ResponseWriter, r *http.Request, ServiceQueues *models.Services, ctx context.Context, logger *zap.Logger) (transactions.GetQueueResponse, error) {
 	ctx, span := tracer.Start(ctx, "GetQueueHandler")
 	defer span.End()
 
 	var req transactions.GetQueueRequest
-	fmt.Fprint(w, "Getting queue...")
+	logger.Info("Getting queue...")
 
 	var response transactions.GetQueueResponse
 	var queue *models.ServiceQueue
@@ -104,16 +113,20 @@ func GetQueueHandler(w http.ResponseWriter, r *http.Request, ServiceQueues *mode
 	if _, err := ServiceQueues.GetService(req.ServiceId); err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		return response, fmt.Errorf("Service %s does not exist", req.ServiceId)
+		msg := fmt.Sprintf("Service %s does not exist", req.ServiceId)
+		logger.Error(msg)
+		return response, fmt.Errorf("%s", msg)
 	}
 	//get queue
 	if queue, err = ServiceQueues.GetServiceQueue(req.ServiceId, req.QueueName); err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		return response, fmt.Errorf("Queue %s does not exist", req.QueueName)
+		msg := fmt.Sprintf("Queue %s does not exist", req.QueueName)
+		logger.Error(msg)
+		return response, fmt.Errorf("%s", msg)
 	}
 	span.SetStatus(codes.Ok, "")
-	fmt.Fprint(w, "Got queue...")
+	logger.Info("Got queue...")
 	response.Name = queue.QueueName
 	response.ServiceId = queue.ServiceId
 	response.Loggable = queue.Loggable
@@ -121,11 +134,11 @@ func GetQueueHandler(w http.ResponseWriter, r *http.Request, ServiceQueues *mode
 	return response, nil
 }
 
-func GetServiceHandler(w http.ResponseWriter, r *http.Request, Services *models.Services, ctx context.Context) (transactions.GetServiceResponse, error) {
+func GetServiceHandler(w http.ResponseWriter, r *http.Request, Services *models.Services, ctx context.Context, logger *zap.Logger) (transactions.GetServiceResponse, error) {
 	ctx, span := tracer.Start(ctx, "GetServiceHandler")
 	defer span.End()
 
-	fmt.Fprint(w, "Getting service...")
+	logger.Info("Getting service...")
 	var req transactions.GetServiceRequest
 	var response transactions.GetServiceResponse
 	var service *models.Service
@@ -140,10 +153,12 @@ func GetServiceHandler(w http.ResponseWriter, r *http.Request, Services *models.
 	if service, err = Services.GetService(req.ServiceId); err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		return response, fmt.Errorf("Service %s does not exist", req.ServiceId)
+		msg := fmt.Sprintf("Service %s does not exist", req.ServiceId)
+		logger.Error(msg)
+		return response, fmt.Errorf("%s", msg)
 	}
 
-	fmt.Fprint(w, "Got service...")
+	logger.Info("Got service...")
 	response.ServiceId = service.ServiceId
 
 	// Declare with the correct type matching GetServiceResponse.Queues
@@ -159,15 +174,16 @@ func GetServiceHandler(w http.ResponseWriter, r *http.Request, Services *models.
 		}
 	}
 
+	logger.Info("Mapped queues for service...")
 	span.SetStatus(codes.Ok, "")
 	response.Queues = queuesMap
 	return response, nil
 }
 
-func GetAllServicesHandler(w http.ResponseWriter, r *http.Request, Services *models.Services, ctx context.Context) (transactions.GetAllServicesResponse, error) {
+func GetAllServicesHandler(w http.ResponseWriter, r *http.Request, Services *models.Services, ctx context.Context, logger *zap.Logger) (transactions.GetAllServicesResponse, error) {
 	ctx, span := tracer.Start(ctx, "GetAllServicesHandler")
 	defer span.End()
-	fmt.Fprint(w, "Getting all services...")
+	logger.Info("Getting all services...")
 	var response transactions.GetAllServicesResponse
 
 	services := Services.GetAllServices()
@@ -189,7 +205,7 @@ func GetAllServicesHandler(w http.ResponseWriter, r *http.Request, Services *mod
 	}
 
 	span.SetStatus(codes.Ok, "")
-	fmt.Fprint(w, "Got all services...")
+	logger.Info("Got all services...")
 	return response, nil
 }
 
@@ -204,16 +220,20 @@ Workflow for removing services:
 same thing for queues
 */
 
-func RemoveQueueHandler(w http.ResponseWriter, r *http.Request, Services *models.Services, conn *amqp.Connection, ctx context.Context) error {
+func RemoveQueueHandler(w http.ResponseWriter, r *http.Request, Services *models.Services, conn *amqp.Connection, ctx context.Context, logger *zap.Logger) error {
 	ctx, span := tracer.Start(ctx, "RemoveQueueHandler")
 	defer span.End()
+
+	logger.Info("Removing queue...")
 
 	var req transactions.RemoveQueueRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		return fmt.Errorf("failed to decode request: %w", err)
+		msg := fmt.Sprintf("Failed to decode request: %v", err)
+		logger.Error(msg)
+		return fmt.Errorf("%s", msg)
 	}
 
 	// 1. Mark queue as draining
@@ -221,13 +241,17 @@ func RemoveQueueHandler(w http.ResponseWriter, r *http.Request, Services *models
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		return fmt.Errorf("service %s does not exist", req.ServiceId)
+		msg := fmt.Sprintf("Service %s does not exist", req.ServiceId)
+		logger.Error(msg)
+		return fmt.Errorf("%s", msg)
 	}
 
 	if err := service.SetQueueDraining(req.QueueName); err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		return fmt.Errorf("failed to mark queue %s as draining: %w", req.QueueName, err)
+		msg := fmt.Sprintf("Failed to mark queue %s as draining: %v", req.QueueName, err)
+		logger.Error(msg)
+		return fmt.Errorf("%s", msg)
 	}
 
 	// 2. Stop routing new messages to queue
@@ -235,7 +259,9 @@ func RemoveQueueHandler(w http.ResponseWriter, r *http.Request, Services *models
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		return fmt.Errorf("failed to open channel: %w", err)
+		msg := fmt.Sprintf("Failed to open channel: %v", err)
+		logger.Error(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	defer ch.Close()
 
@@ -245,12 +271,15 @@ func RemoveQueueHandler(w http.ResponseWriter, r *http.Request, Services *models
 		if err != nil {
 			span.RecordError(err)
 			span.SetStatus(codes.Error, err.Error())
-			return fmt.Errorf("failed to inspect queue %s: %w", req.QueueName, err)
+			msg := fmt.Sprintf("Failed to inspect queue %s: %v", req.QueueName, err)
+			logger.Error(msg)
+			return fmt.Errorf("%s", msg)
 		}
 		if queue.Messages == 0 {
 			break
 		}
-		fmt.Printf("Queue %s has %d messages remaining, waiting...\n", req.QueueName, queue.Messages)
+		msg := fmt.Sprintf("Queue %s has %d messages remaining, waiting...", req.QueueName, queue.Messages)
+		logger.Info(msg)
 		time.Sleep(1 * time.Second)
 	}
 
@@ -259,22 +288,27 @@ func RemoveQueueHandler(w http.ResponseWriter, r *http.Request, Services *models
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		return fmt.Errorf("failed to delete queue %s: %w", req.QueueName, err)
+		msg := fmt.Sprintf("Failed to delete queue %s: %v", req.QueueName, err)
+		logger.Error(msg)
+		return fmt.Errorf("%s", msg)
 	}
 
 	if err := service.RemoveQueue(req.QueueName); err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		return fmt.Errorf("failed to remove queue %s from service: %w", req.QueueName, err)
+		msg := fmt.Sprintf("Failed to remove queue %s from service: %v", req.QueueName, err)
+		logger.Error(msg)
+		return fmt.Errorf("%s", msg)
 	}
 
 	span.SetStatus(codes.Ok, "")
-	fmt.Printf("Queue %s removed successfully\n", req.QueueName)
+	msg := fmt.Sprintf("Queue %s removed successfully", req.QueueName)
+	logger.Info(msg)
 	w.WriteHeader(http.StatusOK)
 	return nil
 }
 
-func RemoveServiceHandler(w http.ResponseWriter, r *http.Request, Services *models.Services, conn *amqp.Connection, ctx context.Context) error {
+func RemoveServiceHandler(w http.ResponseWriter, r *http.Request, Services *models.Services, conn *amqp.Connection, ctx context.Context, logger *zap.Logger) error {
 	ctx, span := tracer.Start(ctx, "RemoveServiceHandler")
 	defer span.End()
 
@@ -283,7 +317,9 @@ func RemoveServiceHandler(w http.ResponseWriter, r *http.Request, Services *mode
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		return fmt.Errorf("failed to decode request: %w", err)
+		msg := fmt.Sprintf("Failed to decode request: %v", err)
+		logger.Error(msg)
+		return fmt.Errorf("%s", msg)
 	}
 
 	// 1. Mark service as draining
@@ -291,13 +327,17 @@ func RemoveServiceHandler(w http.ResponseWriter, r *http.Request, Services *mode
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		return fmt.Errorf("service %s does not exist", req.ServiceId)
+		msg := fmt.Sprintf("Service %s does not exist", req.ServiceId)
+		logger.Error(msg)
+		return fmt.Errorf("%s", msg)
 	}
 
 	if err := Services.SetServiceDraining(req.ServiceId); err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		return fmt.Errorf("failed to mark service %s as draining: %w", req.ServiceId, err)
+		msg := fmt.Sprintf("Failed to mark service %s as draining: %v", req.ServiceId, err)
+		logger.Error(msg)
+		return fmt.Errorf("%s", msg)
 	}
 
 	// 2 & 3. Stop routing and drain each queue
@@ -305,7 +345,9 @@ func RemoveServiceHandler(w http.ResponseWriter, r *http.Request, Services *mode
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		return fmt.Errorf("failed to open channel: %w", err)
+		msg := fmt.Sprintf("Failed to open channel: %v", err)
+		logger.Error(msg)
+		return fmt.Errorf("%s", msg)
 	}
 	defer ch.Close()
 
@@ -313,7 +355,9 @@ func RemoveServiceHandler(w http.ResponseWriter, r *http.Request, Services *mode
 		if err := service.SetQueueDraining(queue.QueueName); err != nil {
 			span.RecordError(err)
 			span.SetStatus(codes.Error, err.Error())
-			return fmt.Errorf("failed to mark queue %s as draining: %w", queue.QueueName, err)
+			msg := fmt.Sprintf("Failed to mark queue %s as draining: %v", queue.QueueName, err)
+			logger.Error(msg)
+			return fmt.Errorf("%s", msg)
 		}
 		isDurable := queue.SearchTags("durable")
 		for {
@@ -322,12 +366,15 @@ func RemoveServiceHandler(w http.ResponseWriter, r *http.Request, Services *mode
 			if err != nil {
 				span.RecordError(err)
 				span.SetStatus(codes.Error, err.Error())
-				return fmt.Errorf("failed to inspect queue %s: %w", queue.QueueName, err)
+				msg := fmt.Sprintf("Failed to inspect queue %s: %v", queue.QueueName, err)
+				logger.Error(msg)
+				return fmt.Errorf("%s", msg)
 			}
 			if q.Messages == 0 {
 				break
 			}
-			fmt.Printf("Queue %s has %d messages remaining, waiting...\n", queue.QueueName, q.Messages)
+			msg := fmt.Sprintf("Queue %s has %d messages remaining, waiting...", queue.QueueName, q.Messages)
+			logger.Info(msg)
 			time.Sleep(1 * time.Second)
 		}
 
@@ -335,22 +382,28 @@ func RemoveServiceHandler(w http.ResponseWriter, r *http.Request, Services *mode
 		if _, err := ch.QueueDelete(queue.QueueName, false, false, false); err != nil {
 			span.RecordError(err)
 			span.SetStatus(codes.Error, err.Error())
-			return fmt.Errorf("failed to delete queue %s: %w", queue.QueueName, err)
+			msg := fmt.Sprintf("Failed to delete queue %s: %v", queue.QueueName, err)
+			logger.Error(msg)
+			return fmt.Errorf("%s", msg)
 		}
-		fmt.Printf("Queue %s deleted\n", queue.QueueName)
+		msg := fmt.Sprintf("Queue %s deleted", queue.QueueName)
+		logger.Info(msg)
 	}
 
 	// 4. Remove service and notify
 	if err := Services.RemoveService(req.ServiceId); err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		return fmt.Errorf("failed to remove service %s: %w", req.ServiceId, err)
+		msg := fmt.Sprintf("Failed to remove service %s: %v", req.ServiceId, err)
+		logger.Error(msg)
+		return fmt.Errorf("%s", msg)
 	}
+	msg := fmt.Sprintf("Service %s removed", req.ServiceId)
+	logger.Info(msg)
 
 	// 5. Service can now shut down
 
 	span.SetStatus(codes.Ok, "")
-	fmt.Printf("Service %s removed successfully\n", req.ServiceId)
 	w.WriteHeader(http.StatusOK)
 	return nil
 }
