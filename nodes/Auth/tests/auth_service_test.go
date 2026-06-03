@@ -25,11 +25,16 @@ import (
 	core "github.com/ayden-boyko/Piranid/nodes/Auth/authcore"
 
 	handler "github.com/ayden-boyko/Piranid/nodes/Auth/handlers"
+
+	telemetry "Piranid/pkg/telemetry"
+
+	"go.uber.org/zap"
 )
 
 var server *core.AuthNode
 var credentials_manager *data_manager.DataManagerImpl[model.AuthEntry]
 var auth_code_manager *data_manager.DataManagerImpl[model.AuthCodeEntry]
+var logger *zap.Logger
 
 //todo create test token
 
@@ -75,6 +80,13 @@ func init() {
 	fmt.Println("Auth Node created...")
 	fmt.Println("Initializing database...")
 
+	// Set up logging
+	logger, err := telemetry.NewLogger("notifications")
+	if err != nil {
+		log.Fatalf("failed to setup logger: %v", err)
+	}
+	defer logger.Sync()
+
 }
 
 func TestSignUpAndLogin(t *testing.T) {
@@ -98,7 +110,7 @@ func TestSignUpAndLogin(t *testing.T) {
 	// Perform SignUpHandler test
 	req := httptest.NewRequest(http.MethodPost, "/signup", bytes.NewReader(payloadBytes))
 	w := httptest.NewRecorder()
-	err := handler.SignUpHandler(w, req, credentials_manager, ctx)
+	err := handler.SignUpHandler(w, req, credentials_manager, ctx, logger)
 	if err != nil {
 		t.Fatalf("SignUpHandler failed: %v", err)
 	}
@@ -116,7 +128,7 @@ func TestSignUpAndLogin(t *testing.T) {
 	// Perform LoginHandler test (which generates auth code in DB)
 	loginReq := httptest.NewRequest(http.MethodPost, "/login", bytes.NewReader(loginBytes))
 	loginW := httptest.NewRecorder()
-	err = handler.LoginHandler(loginW, loginReq, credentials_manager, auth_code_manager, ctx)
+	err = handler.LoginHandler(loginW, loginReq, credentials_manager, auth_code_manager, ctx, logger)
 	if err != nil {
 		t.Fatalf("LoginHandler failed: %v", err)
 	}
@@ -127,7 +139,7 @@ func TestSignUpAndLogin(t *testing.T) {
 	// Exchange auth code for token
 	tokenReq := httptest.NewRequest(http.MethodPost, "/token", bytes.NewReader(loginBytes))
 	tokenW := httptest.NewRecorder()
-	err = handler.TokenHandler(tokenW, tokenReq, credentials_manager, auth_code_manager, ctx)
+	err = handler.TokenHandler(tokenW, tokenReq, credentials_manager, auth_code_manager, ctx, logger)
 	if err != nil {
 		t.Fatalf("TokenHandler failed: %v", err)
 	}

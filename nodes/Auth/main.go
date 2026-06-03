@@ -64,6 +64,13 @@ func main() {
 	}
 	defer otelShutdown(ctx)
 
+	// Set up logging
+	logger, err := telemetry.NewLogger("notifications")
+	if err != nil {
+		log.Fatalf("failed to setup logger: %v", err)
+	}
+	defer logger.Sync()
+
 	// Run the server in a separate goroutine. This allows the server to run
 	// concurrently with the other code.
 	go func() {
@@ -71,7 +78,7 @@ func main() {
 		// is shutdown.
 		fmt.Println("Starting Auth Node...")
 		if err := server.Run(fmt.Sprintf(":%s", os.Getenv("AUTH_PORT")), func() {
-			server.RegisterRoutes(TemplatesFS, ctx) // TemplatesFS is captured here
+			server.RegisterRoutes(TemplatesFS, ctx, logger) // TemplatesFS is captured here
 		}); !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("Error running Auth Node: %v", err)
 		}
@@ -90,7 +97,7 @@ func main() {
 	defer shutdownCancel()
 
 	// Shutdown the server. This will block until the server is shutdown.
-	if err := server.SafeShutdown(shutdownCtx); err != nil {
+	if err := server.SafeShutdown(shutdownCtx, logger); err != nil {
 		log.Fatalf("\n Auth Node shutdown failed: %v", err)
 	}
 	log.Println("\n Auth Node shutdown safely completed")

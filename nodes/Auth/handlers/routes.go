@@ -11,6 +11,7 @@ import (
 	"time"
 
 	utils "github.com/ayden-boyko/Piranid/nodes/Auth/utils"
+	"go.uber.org/zap"
 
 	data_manager "Piranid/pkg/DataManager"
 
@@ -32,12 +33,11 @@ func AuthTestHandler(w http.ResponseWriter, r *http.Request) {
 
 // TODO: ADD PKCE, https://medium.com/@dipakkrdas/pkce-explained-securing-oauth-without-the-secrets-bbaf83f04959
 
-func SignUpHandler(w http.ResponseWriter, r *http.Request, dm *data_manager.DataManagerImpl[model.AuthEntry], ctx context.Context) error {
+func SignUpHandler(w http.ResponseWriter, r *http.Request, dm *data_manager.DataManagerImpl[model.AuthEntry], ctx context.Context, logger *zap.Logger) error {
 	ctx, span := tracer.Start(ctx, "SignUpHandler")
 	defer span.End()
 
-	fmt.Println("Sign up received...")
-	fmt.Fprint(w, "received")
+	logger.Info("Sign up received...")
 	var req transactions.SignUpRequest
 
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -60,6 +60,7 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, dm *data_manager.Data
 		return err
 	}
 
+	logger.Info(fmt.Sprintf("User %s signed up successfully", req.Username))
 	span.SetStatus(codes.Ok, "")
 	w.WriteHeader(http.StatusOK)
 
@@ -68,12 +69,11 @@ func SignUpHandler(w http.ResponseWriter, r *http.Request, dm *data_manager.Data
 
 // handles requests for user sign up,
 // showing sign up page
-func SignUpPageHandler(w http.ResponseWriter, r *http.Request, templatesFS embed.FS, ctx context.Context) error {
+func SignUpPageHandler(w http.ResponseWriter, r *http.Request, templatesFS embed.FS, ctx context.Context, logger *zap.Logger) error {
 	ctx, span := tracer.Start(ctx, "SignUpPageHandler")
 	defer span.End()
 
-	fmt.Println("Sign up received...")
-	fmt.Fprint(w, "received")
+	logger.Info("Sign up received...")
 	var req transactions.SignUpPage
 
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -81,7 +81,9 @@ func SignUpPageHandler(w http.ResponseWriter, r *http.Request, templatesFS embed
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return errors.New("error decoding request body")
+		msg := "error decoding request body"
+		logger.Error(msg)
+		return errors.New(msg)
 	}
 
 	tmpl, err := template.ParseFS(templatesFS, "templates/SignUpPage.html")
@@ -89,17 +91,22 @@ func SignUpPageHandler(w http.ResponseWriter, r *http.Request, templatesFS embed
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return errors.New("error parsing template")
+		msg := "error parsing template"
+		logger.Error(msg)
+		return errors.New(msg)
 	}
 	err = tmpl.Execute(w, req)
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		http.Error(w, "Template execution error", http.StatusInternalServerError)
+		msg := "error executing template"
+		logger.Error(msg)
+		http.Error(w, msg, http.StatusInternalServerError)
 		return err
 	}
 
 	span.SetStatus(codes.Ok, "")
+	logger.Info("Sign up page rendered successfully")
 	return nil
 }
 
@@ -108,7 +115,7 @@ func SignUpPageHandler(w http.ResponseWriter, r *http.Request, templatesFS embed
 
 // user hits login page and login page redirects to auth server login page,
 // once user enters info the auth code is sent to the client
-func AuthPageHandler(w http.ResponseWriter, r *http.Request, templatesFS embed.FS, ctx context.Context) error {
+func AuthPageHandler(w http.ResponseWriter, r *http.Request, templatesFS embed.FS, ctx context.Context, logger *zap.Logger) error {
 	ctx, span := tracer.Start(ctx, "AuthPageHandler")
 	defer span.End()
 
@@ -119,34 +126,40 @@ func AuthPageHandler(w http.ResponseWriter, r *http.Request, templatesFS embed.F
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return errors.New("error decoding request body")
+		msg := "error decoding request body"
+		logger.Error(msg)
+		return errors.New(msg)
 	}
-	fmt.Println("Auth received...")
-	fmt.Fprint(w, "received")
+	logger.Info("Auth received...")
 
 	tmpl, err := template.ParseFS(templatesFS, "templates/ConsentPage.html")
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return errors.New("error parsing template")
+		msg := "error parsing template"
+		logger.Error(msg)
+		return errors.New(msg)
 	}
 	err = tmpl.Execute(w, req)
 	if err != nil {
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		http.Error(w, "Template execution error", http.StatusInternalServerError)
+		msg := "error executing template"
+		logger.Error(msg)
+		http.Error(w, msg, http.StatusInternalServerError)
 		return err
 	}
 
 	span.SetStatus(codes.Ok, "")
+	logger.Info("Auth page rendered successfully")
 	return nil
 }
 
 // Once the user signs in on the consent screen, the info is sent here where the auth server
 // can verify the user information, if correct,
 // the auth server responds to the client throught the callback (i.e redirect url) with the auth code
-func LoginHandler(w http.ResponseWriter, r *http.Request, ae *data_manager.DataManagerImpl[model.AuthEntry], ace *data_manager.DataManagerImpl[model.AuthCodeEntry], ctx context.Context) error {
+func LoginHandler(w http.ResponseWriter, r *http.Request, ae *data_manager.DataManagerImpl[model.AuthEntry], ace *data_manager.DataManagerImpl[model.AuthCodeEntry], ctx context.Context, logger *zap.Logger) error {
 	ctx, span := tracer.Start(ctx, "LoginHandler")
 	defer span.End()
 
@@ -157,7 +170,9 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, ae *data_manager.DataM
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return errors.New("error decoding request body")
+		msg := "error decoding request body"
+		logger.Error(msg)
+		return errors.New(msg)
 	}
 
 	// check if the user exists in the database
@@ -166,45 +181,55 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, ae *data_manager.DataM
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return errors.New("error decoding request body")
+		msg := "error decoding request body"
+		logger.Error(msg)
+		return errors.New(msg)
 	}
 
 	if entry == (model.AuthEntry{}) { // entry is empty, user doesnt exist
+		msg := fmt.Sprintf("User %s does not exist", req.Username)
+		logger.Error(msg)
 		span.RecordError(errors.New("user does not exist"))
-		span.SetStatus(codes.Error, "User does not exist")
-		http.Error(w, "User does not exist", http.StatusBadRequest)
-		return errors.New("user does not exist")
+		span.SetStatus(codes.Error, msg)
+		http.Error(w, msg, http.StatusBadRequest)
+		return errors.New(msg)
 	}
 
 	//check if redirect url is valid
 	if entry.RedirectURI != req.RedirectURI {
-		span.RecordError(errors.New("invalid redirect url"))
-		span.SetStatus(codes.Error, "Invalid redirect url")
-		http.Error(w, "Invalid redirect url", http.StatusBadRequest)
-		return errors.New("invalid redirect url")
+		msg := "Invalid redirect url"
+		span.RecordError(errors.New(msg))
+		span.SetStatus(codes.Error, msg)
+		http.Error(w, msg, http.StatusBadRequest)
+		return errors.New(msg)
 	}
 
-	fmt.Println("Login received...")
+	logger.Info("Login received...")
 	// create auth code JWT
 	token, time, err := utils.CreateToken(entry.ClientId)
 	if err != nil {
+		msg := "Error creating token"
+		logger.Error(fmt.Sprintf("%s: %v", msg, err))
 		span.RecordError(err)
-		span.SetStatus(codes.Error, "Error creating token")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return errors.New("error creating token")
+		span.SetStatus(codes.Error, msg)
+		http.Error(w, msg, http.StatusInternalServerError)
+		return errors.New(msg)
 	}
 
 	// add auth code to database
 	if err := ace.PushData(model.AuthCodeEntry{AuthCode: token, Expires: time}, utils.AuthCodeInserter); err != nil {
+		msg := "Error adding auth code to database"
+		logger.Error(fmt.Sprintf("%s: %v", msg, err))
 		span.RecordError(err)
-		span.SetStatus(codes.Error, "Error adding auth code to database")
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return errors.New("error adding auth code to database")
+		span.SetStatus(codes.Error, msg)
+		http.Error(w, msg, http.StatusInternalServerError)
+		return errors.New(msg)
 	}
 
 	// return auth code
 	span.SetStatus(codes.Ok, "")
 	w.Header().Set("Content-Type", "application/json")
+	logger.Info("Auth code generated", zap.String("auth_code", token))
 	json.NewEncoder(w).Encode(token)
 
 	return nil
@@ -212,7 +237,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, ae *data_manager.DataM
 
 // once the client gets auth code,
 // it makes a call to the auth server to exchange the code for an access token
-func TokenHandler(w http.ResponseWriter, r *http.Request, ae *data_manager.DataManagerImpl[model.AuthEntry], ace *data_manager.DataManagerImpl[model.AuthCodeEntry], ctx context.Context) error {
+func TokenHandler(w http.ResponseWriter, r *http.Request, ae *data_manager.DataManagerImpl[model.AuthEntry], ace *data_manager.DataManagerImpl[model.AuthCodeEntry], ctx context.Context, logger *zap.Logger) error {
 	ctx, span := tracer.Start(ctx, "TokenHandler")
 	defer span.End()
 
@@ -225,10 +250,11 @@ func TokenHandler(w http.ResponseWriter, r *http.Request, ae *data_manager.DataM
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return errors.New("error decoding request body")
+		msg := "error decoding request body"
+		logger.Error(msg)
+		return errors.New(msg)
 	}
-	fmt.Println("Token received...")
-	fmt.Fprint(w, "received")
+	logger.Info("Token received...")
 
 	// check if auth code is valid
 	auth_code, err := ace.GetEntry("authcode", req.Authcode, utils.AuthCodeScanner)
@@ -236,21 +262,27 @@ func TokenHandler(w http.ResponseWriter, r *http.Request, ae *data_manager.DataM
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return errors.New("error decoding request body")
+		msg := "error decoding request body"
+		logger.Error(msg)
+		return errors.New(msg)
 	}
 
 	if auth_code == (model.AuthCodeEntry{}) { // entry is empty, auth code doesnt exist
-		span.RecordError(errors.New("invalid auth code"))
-		span.SetStatus(codes.Error, "Invalid auth code")
-		http.Error(w, "Invalid auth code", http.StatusBadRequest)
-		return errors.New("invalid auth code")
+		msg := "Invalid auth code"
+		span.RecordError(errors.New(msg))
+		span.SetStatus(codes.Error, msg)
+		http.Error(w, msg, http.StatusBadRequest)
+		logger.Error(msg)
+		return errors.New(msg)
 	}
 	// check if auth code is expired
 	if auth_code.Expires < time.Now().Unix() {
-		span.RecordError(errors.New("auth code expired"))
-		span.SetStatus(codes.Error, "Auth code expired")
-		http.Error(w, "Auth code expired", http.StatusBadRequest)
-		return errors.New("auth code expired")
+		msg := "Auth code expired"
+		span.RecordError(errors.New(msg))
+		span.SetStatus(codes.Error, msg)
+		http.Error(w, msg, http.StatusBadRequest)
+		logger.Error(msg)
+		return errors.New(msg)
 	}
 
 	// at this point, auth code is valid
@@ -259,7 +291,9 @@ func TokenHandler(w http.ResponseWriter, r *http.Request, ae *data_manager.DataM
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return errors.New("error removing auth code from database")
+		msg := "Error removing auth code from database"
+		logger.Error(fmt.Sprintf("%s: %v", msg, err))
+		return errors.New(msg)
 	}
 
 	// get user auth_entry
@@ -268,23 +302,29 @@ func TokenHandler(w http.ResponseWriter, r *http.Request, ae *data_manager.DataM
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return errors.New("error decoding request body")
+		msg := "Error fetching user credentials"
+		logger.Error(fmt.Sprintf("%s: %v", msg, err))
+		return errors.New(msg)
 	}
 
 	// check if redirect url is valid
 	if entry.RedirectURI != req.RedirectURI {
-		span.RecordError(errors.New("invalid redirect url"))
-		span.SetStatus(codes.Error, "Invalid redirect url")
-		http.Error(w, "Invalid redirect url", http.StatusBadRequest)
-		return errors.New("invalid redirect url")
+		msg := "Invalid redirect url"
+		span.RecordError(errors.New(msg))
+		span.SetStatus(codes.Error, msg)
+		http.Error(w, msg, http.StatusBadRequest)
+		logger.Error(msg)
+		return errors.New(msg)
 	}
 
 	// check if client secret in db matches based on client id
 	if entry.ClientSecret != req.ClientSecret {
-		span.RecordError(errors.New("invalid client secret"))
-		span.SetStatus(codes.Error, "Invalid client secret")
-		http.Error(w, "Invalid client secret", http.StatusBadRequest)
-		return errors.New("invalid client secret")
+		msg := "Invalid client secret"
+		span.RecordError(errors.New(msg))
+		span.SetStatus(codes.Error, msg)
+		http.Error(w, msg, http.StatusBadRequest)
+		logger.Error(msg)
+		return errors.New(msg)
 	}
 
 	// if auth code and client secret valid
@@ -298,6 +338,7 @@ func TokenHandler(w http.ResponseWriter, r *http.Request, ae *data_manager.DataM
 	json.NewEncoder(w).Encode(res)
 
 	span.SetStatus(codes.Ok, "")
+	logger.Info("Access token generated", zap.String("access_token", res.AccessToken), zap.String("refresh_token", res.RefreshToken))
 	return nil
 }
 
