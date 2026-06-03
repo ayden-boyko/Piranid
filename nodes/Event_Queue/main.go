@@ -69,16 +69,15 @@ func main() {
 
 	defer conn.Close()
 
-	// Register Routes
-	server.RegisterRoutes(conn, ctx, logger)
-
 	// Run the server in a separate goroutine. This allows the server to run
 	// concurrently with the other code.
 	go func() {
 		// Run the server and check for errors. This will block until the server
 		// is shutdown.
 		fmt.Println("Starting Event Node...")
-		if err := server.Run(fmt.Sprintf(":%s", os.Getenv("EVENT_QUEUE_PORT")), func() {}); !errors.Is(err, http.ErrServerClosed) {
+		if err := server.Run(fmt.Sprintf(":%s", os.Getenv("EVENT_QUEUE_PORT")), func() {
+			server.RegisterRoutes(conn, ctx, logger) // Pass the connection to the handlers
+		}); !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("Error running Event Node: %v", err)
 		}
 	}()

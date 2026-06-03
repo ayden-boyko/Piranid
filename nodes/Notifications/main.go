@@ -36,13 +36,31 @@ func main() {
 	ctx := context.Background()
 	grpcServer := grpc.NewServer()
 
+	// Set up telemetry
+	collectorAddr := os.Getenv("OTEL_COLLECTOR_ADDR")
+	if collectorAddr == "" {
+		collectorAddr = "localhost:4317"
+	}
+	otelShutdown, err := telemetry.SetupOTelSDK(ctx, "Notification Node", collectorAddr)
+	if err != nil {
+		log.Fatalf("failed to set up telemetry: %v", err)
+	}
+	defer otelShutdown(ctx)
+
+	// Set up logging
+	logger, err := telemetry.NewLogger("notifications")
+	if err != nil {
+		log.Fatalf("failed to setup logger: %v", err)
+	}
+	defer logger.Sync()
+
 	// Create a new HTTP server. This server will be responsible for sending
 	// notifications
 	server := &core.NotificationNode{Node: node.NewNode(), Messager: client, Service_ID: utils.NewServiceID("NOTF")}
 
 	fmt.Println("Notification Node created...")
 
-	notifHandler := handlers.NewNotificationHandler(server)
+	notifHandler := handlers.NewNotificationHandler(server, logger)
 
 	v1.RegisterNotifierServer(grpcServer, notifHandler)
 
@@ -61,17 +79,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to set up DB: %v", err)
 	}
-
-	// Set up telemetry
-	collectorAddr := os.Getenv("OTEL_COLLECTOR_ADDR")
-	if collectorAddr == "" {
-		collectorAddr = "localhost:4317"
-	}
-	otelShutdown, err := telemetry.SetupOTelSDK(ctx, "Notification Node", collectorAddr)
-	if err != nil {
-		log.Fatalf("failed to set up telemetry: %v", err)
-	}
-	defer otelShutdown(ctx)
 
 	// Run the server in a separate goroutine. This allows the server to run
 	// concurrently with the other code.
