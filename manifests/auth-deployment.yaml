@@ -22,6 +22,8 @@ spec:
           ports:
             - containerPort: 8081
           env:
+            - name: OTEL_COLLECTOR_ADDR
+              value: "172.23.62.7:4317"
             - name: AUTH_SERVICE_PORT
               value: "8081"
             - name: API_VERSION
