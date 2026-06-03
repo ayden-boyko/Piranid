@@ -20,6 +20,7 @@ import (
 	core "github.com/ayden-boyko/Piranid/nodes/Notifications/notifcore"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 
 	"github.com/trycourier/courier-go/v2"
 	_ "modernc.org/sqlite"
@@ -63,6 +64,7 @@ func main() {
 	notifHandler := handlers.NewNotificationHandler(server, logger)
 
 	v1.RegisterNotifierServer(grpcServer, notifHandler)
+	reflection.Register(grpcServer)
 
 	port := os.Getenv("NOTIFICATION_PORT")
 	if port == "" {
