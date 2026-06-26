@@ -13,7 +13,6 @@ piranid/
 ├── docs/                          # Design notes and documentation
 ├── controllers/                   # Control plane code (Pi 4B )
 │   ├── main.go                    # Controller entry point
-│   ├── scheduler/                 # Custom scheduling logic
 │   ├── api/                       # Cluster management API
 │   └── Dockerfile                 # Controller container image
 ├── nodes/                         # Worker node code (Pi Zero 2W )
