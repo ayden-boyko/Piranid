@@ -20,14 +20,42 @@ spec:
           image: docker.io/library/piranid-event:latest
           imagePullPolicy: Never
           ports:
-            - containerPort: 8082
+            - name: http
+              containerPort: 8082
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
           env:
-            - name: OTEL_COLLECTOR_ADDR
-              value: "172.23.62.7:4317"
+            # main.go reads EVENT_QUEUE_PORT and uses RABBIT_MQ_PORT for the
+            # broker. RABBIT_MQ_PORT was previously absent, so the pod called
+            # log.Panic at startup and crash-looped before reaching a handler.
             - name: EVENT_QUEUE_PORT
               value: "8082"
+            - name: RABBIT_MQ_HOST
+              value: "rabbitmq"
+            - name: RABBIT_MQ_PORT
+              value: "5672"
+            - name: OTEL_COLLECTOR_ADDR
+              value: "172.23.62.7:4317"
             - name: API_VERSION
               value: "v1"
+
+            # Access-token verification. Every service endpoint is behind the
+            # authn bearer middleware; without these the node refuses to start
+            # rather than serving unauthenticated.
+            #
+            # Must match the auth node's AUTH_ISSUER / AUTH_AUDIENCE.
+            - name: AUTH_JWKS_URL
+              value: "http://authorization.piranid.svc.cluster.local:8081/.well-known/jwks.json"
+            - name: AUTH_ISSUER
+              value: "https://auth.piranid.local"
+            - name: AUTH_AUDIENCE
+              value: "event-queue"
+            - name: AUTH_LEEWAY
+              value: "30s"
           resources:
             requests:
               memory: "64Mi"

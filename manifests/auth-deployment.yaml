@@ -6,6 +6,8 @@ metadata:
   labels:
     app: authorization
 spec:
+  # Single replica: SQLite holds the client registry and unconsumed
+  # authorization codes, and only one process may own that file.
   replicas: 1
   selector:
     matchLabels:
@@ -20,21 +22,80 @@ spec:
           image: docker.io/library/piranid-auth:latest
           imagePullPolicy: Never
           ports:
-            - containerPort: 8081
+            - name: http
+              containerPort: 8081
           env:
+            # main.go reads AUTH_PORT. This previously read AUTH_SERVICE_PORT,
+            # which meant the server bound to ":" and took an arbitrary port.
+            - name: AUTH_PORT
+              value: "8081"
+
+            # Token issuer. Must be stable across restarts: every issued token
+            # carries it and every service pins it. Do NOT use the node's
+            # Service_ID, which is a fresh UUID per boot.
+            - name: AUTH_ISSUER
+              value: "https://auth.piranid.local"
+
+            # Token audience. The resource services the tokens are for.
+            - name: AUTH_AUDIENCE
+              value: "event-queue"
+
+            # RSA signing key. Mounted from the Secret below; see README-auth.md.
+            - name: AUTH_PRIVATE_KEY_PATH
+              value: "/etc/piranid/keys/jwt_private.pem"
+            - name: AUTH_PUBLIC_KEY_PATH
+              value: "/etc/piranid/keys/jwt_public.pem"
+
+            # Token lifetimes.
+            - name: ACCESS_TOKEN_TTL
+              value: "15m"
+            - name: AUTH_CODE_TTL
+              value: "2m"
+            - name: AUTH_CLOCK_SKEW
+              value: "30s"
+
+            - name: AUTH_DB_PATH
+              value: "/var/lib/piranid/auth.db"
+            - name: AUTH_SCHEMA_PATH
+              value: "/app/database/Schema.sql"
+
             - name: OTEL_COLLECTOR_ADDR
               value: "172.23.62.7:4317"
-            - name: AUTH_SERVICE_PORT
-              value: "8081"
-            - name: API_VERSION
-              value: "v1"
+          volumeMounts:
+            - name: signing-keys
+              mountPath: /etc/piranid/keys
+              readOnly: true
+            - name: data
+              mountPath: /var/lib/piranid
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 5
           resources:
             requests:
               memory: "64Mi"
               cpu: "100m"
             limits:
-              memory: "128Mi"
+              memory: "256Mi"
               cpu: "200m"
+      volumes:
+        - name: signing-keys
+          secret:
+            # Create with:
+            #   kubectl -n piranid create secret generic auth-signing-keys \
+            #     --from-file=jwt_private.pem \
+            #     --from-file=jwt_public.pem
+            secretName: auth-signing-keys
+        - name: data
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -46,6 +107,7 @@ spec:
     app: authorization
   type: NodePort
   ports:
-    - port: 8081
+    - name: http
+      port: 8081
       targetPort: 8081
       nodePort: 30081

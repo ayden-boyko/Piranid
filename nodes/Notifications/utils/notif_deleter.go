@@ -6,19 +6,28 @@ import (
 	model "github.com/ayden-boyko/Piranid/nodes/Notifications/models"
 )
 
-// NotifDeleter is a function that deletes a notif into the database
-// Deleted Notifs usually have a low priority level, important ones may be kept for later use
+// NotifDeleter removes a notification record.
+//
+// The previous statement embedded a literal tab character between DELETE and
+// FROM, which is not valid SQL.
 func NotifDeleter(tx *sql.Tx, entry model.NotifEntry) error {
-
-	stmt, err := tx.Prepare("DELETE	FROM notifications WHERE id=? AND contact_info=?")
+	stmt, err := tx.Prepare(
+		"DELETE FROM notifications WHERE service_id = ? AND contact_info = ?")
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(entry.Id, entry.ContactInfo)
+	res, err := stmt.Exec(entry.ServiceId, entry.ContactInfo)
 	if err != nil {
 		return err
 	}
-	return err
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
 }

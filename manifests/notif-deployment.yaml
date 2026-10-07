@@ -22,21 +22,59 @@ spec:
           ports:
             - containerPort: 8084
           env:
-            - name: OTEL_COLLECTOR_ADDR
-              value: "172.23.62.7:4317"
-            - name: NOTIFICATION_SERVICE_PORT
+            # main.go reads NOTIFICATION_PORT. This previously read
+            # NOTIFICATION_SERVICE_PORT, a name the code never looked at, so the
+            # node listened on 8084 only by coincidence.
+            - name: NOTIFICATION_PORT
               value: "8084"
+
+            - name: NOTIFICATION_DB_PATH
+              value: "/var/lib/piranid/notifications.db"
+            - name: NOTIFICATION_SCHEMA_PATH
+              value: "/app/database/Schema.sql"
+
+            # RABBIT_MQ_QUEUE_NAME was missing, so QueueDeclare was called with
+            # an empty name, the broker rejected it, and log.Panicf killed the
+            # process from a goroutine.
+            - name: RABBIT_MQ_HOST
+              value: "rabbitmq"
             - name: RABBIT_MQ_PORT
               value: "5672"
+            - name: RABBIT_MQ_QUEUE_NAME
+              value: "piranid.notifications"
+
             - name: EVENT_SERVICE_WORKER_POOL_SIZE
               value: "5"
-            - name: API_VERSION
-              value: "v1"
+
+            - name: OTEL_COLLECTOR_ADDR
+              value: "172.23.62.7:4317"
+
+            # Bearer verification. Must match the auth node's issuer and
+            # audience; without them every RPC is rejected rather than served
+            # unauthenticated.
+            - name: AUTH_JWKS_URL
+              value: "http://authorization.piranid.svc.cluster.local:8081/.well-known/jwks.json"
+            - name: AUTH_ISSUER
+              value: "https://auth.piranid.local"
+            - name: AUTH_AUDIENCE
+              value: "notifications"
+
+            # Reflection exposes the full service descriptor. Off unless asked.
+            - name: GRPC_REFLECTION
+              value: "false"
             - name: COURIER_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: courier-secret
                   key: COURIER_TOKEN
+          livenessProbe:
+            grpc:
+              port: 8084
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/piranid
           resources:
             requests:
               memory: "64Mi"
@@ -44,6 +82,9 @@ spec:
             limits:
               memory: "128Mi"
               cpu: "200m"
+      volumes:
+        - name: data
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service

@@ -14,46 +14,83 @@ import (
 
 	node "Piranid/node"
 	utils "Piranid/pkg"
+	"Piranid/pkg/authn"
+	"Piranid/pkg/dbutil"
 	telemetry "Piranid/pkg/telemetry"
 
 	core "github.com/ayden-boyko/Piranid/nodes/Auth/authcore"
 
 	"github.com/redis/go-redis/v9"
-	_ "modernc.org/sqlite"
 )
 
-// TODO: add ssl certs
+// TODO: terminate TLS. The node currently serves plain HTTP, so client
+// credentials and authorization codes travel in cleartext. In-cluster this is
+// acceptable only behind a mesh or an ingress that terminates TLS.
 
 //go:embed templates/*
 var TemplatesFS embed.FS
 
-// Code for Auth node
+// main boots the OAuth 2.0 authorization server.
 func main() {
-
 	ctx := context.Background()
 
 	fmt.Println("Creating a new Auth Node...")
 
-	// Create a new HTTP server. This server will be responsible for sending
-	// notifications
 	server := &core.AuthNode{Node: node.NewNode(), Service_ID: utils.NewServiceID("AUTH")}
 
 	fmt.Println("Auth Node created...")
 
-	err := utils.SetUpDB(server.Node, "sqlite", "sqlite://user:pass@192.168.x.x:5432/auth_db", "schema.sql")
-	if err != nil {
-		log.Fatalf("Error setting up DB: %v", err)
+	// Validate token configuration before opening the database, so a missing
+	// issuer is reported as a configuration error rather than surfacing later
+	// as an unverifiable token.
+	config := authn.LoadConfig()
+	if err := config.Validate(); err != nil {
+		log.Fatalf("auth configuration invalid: %v", err)
 	}
 
-	// Create a new Redis client
-	redisClient := redis.NewClient(&redis.Options{
-		Addr:     os.Getenv("REDIS_HOST") + ":" + os.Getenv("REDIS_PORT"),
-		Password: "", // no password set
-		DB:       0,  // use default DB
-	})
-	server.Node.SetCache(redisClient)
+	// SQLite holds clients, credentials, and unconsumed authorization codes.
+	// The DSN is now the real file path; it was previously a Postgres-shaped
+	// string passed to the SQLite driver.
+	dsn := os.Getenv("AUTH_DB_PATH")
+	if dsn == "" {
+		dsn = "auth.db"
+	}
+	schema := os.Getenv("AUTH_SCHEMA_PATH")
+	if schema == "" {
+		schema = "database/Schema.sql"
+	}
 
-	// Set up telemetry
+	// Open with WAL journaling and a busy timeout. Without the timeout,
+	// simultaneous token requests collide on SQLite's single write lock and
+	// fail outright with SQLITE_BUSY rather than queueing.
+	db, err := dbutil.OpenSQLite(dsn)
+	if err != nil {
+		log.Fatalf("Error opening database: %v", err)
+	}
+	server.Node.SetDB(db)
+
+	script, err := os.ReadFile(schema)
+	if err != nil {
+		log.Fatalf("Error reading schema %q: %v", schema, err)
+	}
+	if err := dbutil.ApplySchema(db, string(script)); err != nil {
+		log.Fatalf("Error applying schema: %v", err)
+	}
+
+	// Redis is available for caching. Not currently required for correctness:
+	// authorization codes are read from SQLite on the token request path.
+	redisHost := os.Getenv("REDIS_HOST")
+	redisPort := os.Getenv("REDIS_PORT")
+	if redisHost != "" && redisPort != "" {
+		redisClient := redis.NewClient(&redis.Options{
+			Addr:     redisHost + ":" + redisPort,
+			Password: os.Getenv("REDIS_PASSWORD"),
+			DB:       0,
+		})
+		server.Node.SetCache(redisClient)
+	}
+
+	// Telemetry.
 	collectorAddr := os.Getenv("OTEL_COLLECTOR_ADDR")
 	if collectorAddr == "" {
 		collectorAddr = "localhost:4317"
@@ -64,39 +101,37 @@ func main() {
 	}
 	defer otelShutdown(ctx)
 
-	// Set up logging
-	logger, err := telemetry.NewLogger("notifications")
+	// Logging. This previously named the service "notifications".
+	logger, err := telemetry.NewLogger("auth")
 	if err != nil {
 		log.Fatalf("failed to setup logger: %v", err)
 	}
 	defer logger.Sync()
 
-	// Run the server in a separate goroutine. This allows the server to run
-	// concurrently with the other code.
+	// The port variable was AUTH_PORT; the Kubernetes manifest set
+	// AUTH_SERVICE_PORT, so the server bound to ":".
+	port := os.Getenv("AUTH_PORT")
+	if port == "" {
+		port = "8081"
+	}
+
 	go func() {
-		// Run the server and check for errors. This will block until the server
-		// is shutdown.
 		fmt.Println("Starting Auth Node...")
-		if err := server.Run(fmt.Sprintf(":%s", os.Getenv("AUTH_PORT")), func() {
-			server.RegisterRoutes(TemplatesFS, ctx, logger) // TemplatesFS is captured here
+		if err := server.Run(":"+port, func() {
+			server.RegisterRoutes(TemplatesFS, ctx, logger)
 		}); !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("Error running Auth Node: %v", err)
 		}
 	}()
 
-	// Create a channel to receive signals. This will allow us to gracefully
-	// shutdown the server when it receives a SIGINT or SIGTERM.
+	// Wait for a termination signal, then drain.
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-
-	// Wait for a signal to be received.
 	<-sigChan
 
-	// Create a context with a timeout to shut down the server.
 	shutdownCtx, shutdownCancel := context.WithTimeout(ctx, 10*time.Second)
 	defer shutdownCancel()
 
-	// Shutdown the server. This will block until the server is shutdown.
 	if err := server.SafeShutdown(shutdownCtx, logger); err != nil {
 		log.Fatalf("\n Auth Node shutdown failed: %v", err)
 	}

@@ -1,0 +1,60 @@
+# Storage for the observability stack.
+#
+# The previous configuration had no volume claims at all, so every restart lost
+# Loki indexes and chunks, Tempo traces, and the Prometheus TSDB.
+#
+# On a Pi cluster these are hostPath-backed directories rather than a storage
+# class: there is no dynamic provisioner, and a hostPath keeps the data across
+# pod rescheduling. On real SD cards this is still the weak point of the stack.
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: loki-data
+  namespace: piranid
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 2Gi
+  storageClassName: ""
+  volumeMode: Filesystem
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tempo-data
+  namespace: piranid
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 2Gi
+  storageClassName: ""
+  volumeMode: Filesystem
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-data
+  namespace: piranid
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: ""
+  volumeMode: Filesystem
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-data
+  namespace: piranid
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 256Mi
+  storageClassName: ""
+  volumeMode: Filesystem

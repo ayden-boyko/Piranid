@@ -57,9 +57,29 @@ on Pi 4B
 
 on Pi 02w
 
-- **User Authentication Service:** Handles user registration, login, and token management.
-- **Notification Service:** Handles sending notifications to users.
+- **User Authentication Service:** OAuth 2.0 authorization server (authorization code grant with mandatory PKCE). Issues RS256 JWT access tokens and publishes its public signing key at `/.well-known/jwks.json`, so consuming services verify tokens (signature, issuer, audience, expiry) without ever holding the signing key. See [AUTH_SERVICE.md](AUTH_SERVICE.md).
+- **Notification Service:** gRPC service delivering email and SMS via Courier, with a RabbitMQ consumer as an asynchronous path. Every RPC requires a valid bearer token. See [NOTIFICATIONS_SERVICE.md](NOTIFICATIONS_SERVICE.md).
+- **Message Queue Service:** RabbitMQ broker; the Event_Queue node administers its queues. See [EVENT_QUEUE_SERVICE.md](EVENT_QUEUE_SERVICE.md).
+- **Logging & Monitoring Service:** Six-component observability stack (collector, Tempo, Loki, Prometheus, Promtail, Grafana). See [LOGGING_SERVICE.md](LOGGING_SERVICE.md).
 - **MQTT Broker Service** Handles Events from IOT devices
+
+### Service documentation
+
+| Document | Covers |
+|---|---|
+| [AUTH_SERVICE.md](AUTH_SERVICE.md) | Authorization server: flows, token lifecycle, endpoints, files, security properties |
+| [EVENT_QUEUE_SERVICE.md](EVENT_QUEUE_SERVICE.md) | Queue administration REST API: routes, drain protocol, files, known problems |
+| [NOTIFICATIONS_SERVICE.md](NOTIFICATIONS_SERVICE.md) | gRPC notification delivery: proto contract, RPC behaviour, files, TFA |
+| [LOGGING_SERVICE.md](LOGGING_SERVICE.md) | Observability stack: collector pipelines, Tempo/Loki/Prometheus/Grafana, instrumentation |
+| [PLATFORM.md](PLATFORM.md) | Shared packages, build system, deployment surface, cross-service gaps |
+
+> **Current state.** All three services are implemented, build, vet clean, and
+> pass their tests under the race detector — 135 in total. Auth issues and
+> publishes tokens; Event_Queue administers queues and verifies tokens;
+> Notifications delivers via Courier over gRPC and RabbitMQ, and verifies tokens
+> on every RPC. `make check-all` and `make test-race` are green, and CI runs
+> both plus manifest validation and image builds. `PLATFORM.md §8` lists what
+> remains, which is concentrated in integration testing, authorization and TLS.
 
 ---
 

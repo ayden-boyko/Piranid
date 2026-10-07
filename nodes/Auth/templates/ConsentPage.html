@@ -1,48 +1,214 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
-    <title>OAuth Consent Page</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Piranid &middot; Authorize</title>
     <style>
+      :root {
+        color-scheme: light dark;
+      }
       body {
-        font-family: Arial, sans-serif;
-        text-align: center;
-        background-color: #f2f2f2;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        background: #f4f5f7;
+        color: #1a1d21;
+        display: flex;
+        justify-content: center;
+        padding: 48px 16px;
+        margin: 0;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid #d9dce1;
+        border-radius: 10px;
+        padding: 32px;
+        width: 100%;
+        max-width: 26rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
       }
       h1 {
-        color: #007bff;
+        margin: 0 0 4px;
+        font-size: 1.4rem;
       }
-      p {
-        font-size: 1.2em;
-        color: #555;
+      .client {
+        color: #4a5058;
+        margin: 0 0 24px;
+        font-size: 0.95rem;
       }
-      form {
-        background-color: #fff;
-        border: 1px solid #ccc;
-        padding: 20px;
+      .client strong {
+        color: #1a1d21;
       }
-      input[type="submit"] {
-        background-color: #007bff;
-        color: white;
-        padding: 10px 20px;
+      label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+      input[type="text"],
+      input[type="email"],
+      input[type="password"] {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 9px 11px;
+        margin-bottom: 16px;
+        border: 1px solid #c3c8ce;
+        border-radius: 6px;
+        font-size: 0.95rem;
+      }
+      input[type="text"]:focus,
+      input[type="email"]:focus,
+      input[type="password"]:focus {
+        outline: 2px solid #2f6feb;
+        outline-offset: 1px;
+        border-color: #2f6feb;
+      }
+      .scope {
+        background: #f0f2f5;
+        border-radius: 6px;
+        padding: 12px 14px;
+        margin-bottom: 22px;
+        font-size: 0.85rem;
+      }
+      .scope div + div {
+        margin-top: 4px;
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+      }
+      button {
+        flex: 1;
+        padding: 10px 16px;
         border: none;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        font-weight: 600;
         cursor: pointer;
+      }
+      button.allow {
+        background: #2f6feb;
+        color: #fff;
+      }
+      button.deny {
+        background: #e4e6ea;
+        color: #1a1d21;
+      }
+      button:hover {
+        filter: brightness(0.96);
+      }
+      .note {
+        margin: 20px 0 0;
+        font-size: 0.78rem;
+        color: #6b7178;
+        line-height: 1.5;
+      }
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #16181c;
+          color: #e6e8ea;
+        }
+        .card {
+          background: #1e2126;
+          border-color: #333840;
+        }
+        .client,
+        .note {
+          color: #9aa1a9;
+        }
+        .client strong {
+          color: #e6e8ea;
+        }
+        .scope {
+          background: #262a30;
+        }
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+          background: #16181c;
+          color: #e6e8ea;
+          border-color: #3a4048;
+        }
+        button.deny {
+          background: #2c3138;
+          color: #e6e8ea;
+        }
       }
     </style>
   </head>
   <body>
-    <h1>OAuth Consent Page</h1>
-    <p>Do you want to allow {{ .ClientName }} to access your account?</p>
-    <form action="/api/v1/login" method="post">
-      <input
-        type="hidden"
-        name="client_id"
-        id="client-id"
-        value="{{ .ClientID }}"
-      />
-      <input type="hidden" name="redirect" value="{{ .Redirect }}" />
-      <input type="hidden" name="response_type" value="{{ .ResponseType }}" />
-      <input type="submit" value="Allow" />
-      <input type="submit" value="Deny" />
-    </form>
+    <div class="card">
+      <h1>Authorize access</h1>
+      <p class="client">
+        <strong>{{ .ClientName }}</strong> is requesting access to your Piranid
+        account.
+      </p>
+
+      <!--
+        Every value from the original /authorize query string is echoed into a
+        hidden field so the consent POST carries the full binding. The server
+        revalidates all of it; these are not trusted as-is.
+      -->
+      <form action="/authorize/consent" method="post">
+        <input type="hidden" name="client_id" value="{{ .ClientID }}" />
+        <input type="hidden" name="redirect_uri" value="{{ .RedirectURI }}" />
+        <input type="hidden" name="response_type" value="{{ .ResponseType }}" />
+        <input type="hidden" name="scope" value="{{ .Scope }}" />
+        <input type="hidden" name="state" value="{{ .State }}" />
+        <input type="hidden" name="nonce" value="{{ .Nonce }}" />
+        <input type="hidden" name="code_challenge" value="{{ .CodeChallenge }}" />
+        <input
+          type="hidden"
+          name="code_challenge_method"
+          value="{{ .CodeChallengeMethod }}"
+        />
+
+        <label for="username">Username</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          autocomplete="username"
+          required
+        />
+
+        <label for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          autocomplete="current-password"
+          required
+        />
+
+        <div class="scope">
+          <strong>Requested permissions</strong>
+          {{ if .Scopes }} {{ range .Scopes }}
+          <div>{{ . }}</div>
+          {{ end }} {{ else }}
+          <div>basic profile access</div>
+          {{ end }}
+        </div>
+
+        <div class="actions">
+          <!--
+            Both buttons submit name="approve"; the handler treats anything
+            other than value="approve" as a denial and redirects back with
+            error=access_denied.
+          -->
+          <button class="allow" type="submit" name="approve" value="approve">
+            Allow
+          </button>
+          <button class="deny" type="submit" name="approve" value="deny">
+            Deny
+          </button>
+        </div>
+      </form>
+
+      <p class="note">
+        You can revoke this access at any time. Your password is sent only to
+        the Piranid authorization server over this form post and is never
+        shared with the requesting application.
+      </p>
+    </div>
   </body>
 </html>

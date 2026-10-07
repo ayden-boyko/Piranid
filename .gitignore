@@ -20,3 +20,13 @@
 # env file
 *.env
 .env*
+
+# Private key material for the auth node (RS256 / JWKS).
+# Never commit these: the signing key is what lets an attacker mint tokens.
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Generated JWT signing keys (see nodes/Auth/cmd/genkey)
+/jwt-keys/

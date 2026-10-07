@@ -1,155 +1,245 @@
 package handlers
 
 import (
-	v1 "Piranid/pkg/proto/notifications/v1"
 	"context"
+	"database/sql"
 	"errors"
+	"fmt"
+	"strings"
+	"time"
 
 	model "github.com/ayden-boyko/Piranid/nodes/Notifications/models"
-	"github.com/ayden-boyko/Piranid/nodes/Notifications/utils"
+	notifcore "github.com/ayden-boyko/Piranid/nodes/Notifications/notifcore"
+	notifutils "github.com/ayden-boyko/Piranid/nodes/Notifications/utils"
+
+	v1 "Piranid/pkg/proto/notifications/v1"
+
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/codes"
+	otelcodes "go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
-
-	core "github.com/ayden-boyko/Piranid/nodes/Notifications/notifcore"
-
-	telemetry "Piranid/pkg/telemetry"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
-
-type NotificationHandler struct {
-	v1.UnimplementedNotifierServer
-	NotificationNode *core.NotificationNode
-	Logger           *zap.Logger
-}
 
 var tracer = otel.Tracer("notifications/handlers")
 
-// TODO Caching
+// NotificationHandler implements notifications.v1.Notifier.
+type NotificationHandler struct {
+	v1.UnimplementedNotifierServer
+	NotificationNode *notifcore.NotificationNode
+	Logger           *zap.Logger
+}
 
-func NewNotificationHandler(node *core.NotificationNode, logger *zap.Logger) *NotificationHandler {
+// NewNotificationHandler builds the handler.
+func NewNotificationHandler(node *notifcore.NotificationNode, logger *zap.Logger) *NotificationHandler {
+	if logger == nil {
+		logger = zap.NewNop()
+	}
 	return &NotificationHandler{NotificationNode: node, Logger: logger}
 }
 
-func (h *NotificationHandler) RequestNotification(ctx context.Context, req *v1.NotificationRequest) (*v1.NotificationResponse, error) {
-	ctx, span := tracer.Start(ctx, "RequestNotification")
+// RequestNotification delivers a notification over email, SMS or Slack.
+//
+// Returns either a response or an error, never both. The previous handlers
+// returned a populated NotificationResponse together with a non-nil error, and
+// gRPC discards the response whenever err is set, so every Status_FAILURE body
+// was unreachable by clients.
+func (h *NotificationHandler) RequestNotification(
+	ctx context.Context,
+	req *v1.NotificationRequest,
+) (*v1.NotificationResponse, error) {
+	_, span := tracer.Start(ctx, "RequestNotification")
 	defer span.End()
 
-	h.Logger.Info("Received notification request")
+	if req == nil {
+		return failure(span, "request is required")
+	}
 
-	var responseMessage string
-	notifReq, err := utils.ConvertToNotifEntry(req)
+	entry, err := notifutils.ConvertToNotifEntry(req)
 	if err != nil {
-		h.Logger.Error("Failed to convert request to notification entry", zap.Error(err))
-		telemetry.WithTraceID(ctx, h.Logger).Error("Failed to convert request to notification entry", zap.Error(err))
 		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-		responseMessage = err.Error()
-		return &v1.NotificationResponse{Success: v1.Status_FAILURE, ResponseMessage: &responseMessage}, err
+		return nil, statusError(codes.InvalidArgument, err.Error())
 	}
 
-	switch req.Method {
-	case "Mobile":
-		notifReq.Method = model.Mobile
-	case "Email":
-		notifReq.Method = model.Email
-	// handle other cases as needed
-	default:
-		errs := errors.New("Invalid notification method")
-		h.Logger.Error("Invalid notification method", zap.Error(errs))
-		telemetry.WithTraceID(ctx, h.Logger).Error("Invalid notification method", zap.Error(errs))
-		span.RecordError(errs)
-		span.SetStatus(codes.Error, errs.Error())
-		responseMessage = "Invalid method"
-		return &v1.NotificationResponse{Success: v1.Status_FAILURE, ResponseMessage: &responseMessage}, errors.New("Invalid method")
-	}
-
-	err = h.NotificationNode.HandleNotifSend(ctx, *notifReq)
-	if err != nil {
-		h.Logger.Error("Failed to send notification", zap.Error(err))
-		telemetry.WithTraceID(ctx, h.Logger).Error("Failed to send notification", zap.Error(err))
+	if err := h.NotificationNode.HandleNotifSend(ctx, entry); err != nil {
+		h.Logger.Warn("notification delivery failed",
+			zap.String("service_id", entry.ServiceId),
+			zap.Error(err))
 		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-		responseMessage = err.Error()
-		return &v1.NotificationResponse{Success: v1.Status_FAILURE, ResponseMessage: &responseMessage}, err
+		return nil, statusError(codes.Internal, err.Error())
 	}
 
-	h.Logger.Info("Notification sent successfully")
+	// Persisting is best-effort: the notification was delivered, so a storage
+	// failure must not be reported to the caller as a delivery failure.
+	if err := h.NotificationNode.StoreNotif(ctx, entry); err != nil {
+		h.Logger.Warn("could not persist notification record",
+			zap.String("service_id", entry.ServiceId),
+			zap.Error(err))
+	}
 
-	span.SetStatus(codes.Ok, "")
-	responseMessage = "Notification sent successfully"
-	return &v1.NotificationResponse{Success: v1.Status_SUCCESS, ResponseMessage: &responseMessage}, nil
+	span.SetStatus(otelcodes.Ok, "")
+	return &v1.NotificationResponse{Success: v1.Status_SUCCESS}, nil
 }
 
-func (h *NotificationHandler) DeleteUser(ctx context.Context, req *v1.NotificationRequest) (*v1.NotificationResponse, error) {
-	ctx, span := tracer.Start(ctx, "DeleteUser")
+// DeleteUser removes stored notifications for a service and user.
+//
+// Despite the name, this deletes notification rows. It is not account deletion.
+func (h *NotificationHandler) DeleteUser(
+	ctx context.Context,
+	req *v1.NotificationRequest,
+) (*v1.NotificationResponse, error) {
+	_, span := tracer.Start(ctx, "DeleteUser")
 	defer span.End()
 
-	h.Logger.Info("Received delete user request")
-	telemetry.WithTraceID(ctx, h.Logger).Info("Received delete user request")
-
-	var responseMessage string
-
-	notifReq, err := utils.ConvertToNotifEntry(req)
-	if err != nil {
-		h.Logger.Error("Failed to convert request to notification entry", zap.Error(err))
-		telemetry.WithTraceID(ctx, h.Logger).Error("Failed to convert request to notification entry", zap.Error(err))
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-		responseMessage = err.Error()
-		return &v1.NotificationResponse{Success: v1.Status_FAILURE, ResponseMessage: &responseMessage}, err
+	if req == nil || req.ServiceId == "" {
+		return failure(span, "service_id is required")
+	}
+	if req.Username == "" {
+		return failure(span, "username is required")
 	}
 
-	err = h.NotificationNode.RemoveNotif(ctx, *notifReq)
-	if err != nil {
-		h.Logger.Error("Failed to delete user", zap.Error(err))
-		telemetry.WithTraceID(ctx, h.Logger).Error("Failed to delete user", zap.Error(err))
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-		responseMessage = err.Error()
-		return &v1.NotificationResponse{Success: v1.Status_FAILURE, ResponseMessage: &responseMessage}, err
+	// Deletion keys on (service_id, contact_info) only. Routing a delete through
+	// the delivery converter would demand a valid method and importance, which
+	// are irrelevant to removing a row.
+	entry := model.NotifEntry{
+		ServiceId:   req.ServiceId,
+		ContactInfo: req.Username,
 	}
 
-	h.Logger.Info("User deleted successfully")
-	telemetry.WithTraceID(ctx, h.Logger).Info("User deleted successfully")
-	span.SetStatus(codes.Ok, "")
-	responseMessage = "User deleted successfully"
-	return &v1.NotificationResponse{Success: v1.Status_SUCCESS, ResponseMessage: &responseMessage}, nil
+	if err := h.NotificationNode.RemoveNotif(ctx, entry); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, statusError(codes.NotFound,
+				fmt.Sprintf("no notifications for service %q and user %q",
+					req.ServiceId, req.Username))
+		}
+		span.RecordError(err)
+		return nil, statusError(codes.Internal, err.Error())
+	}
+
+	span.SetStatus(otelcodes.Ok, "")
+	return &v1.NotificationResponse{Success: v1.Status_SUCCESS}, nil
 }
 
-func (h *NotificationHandler) RequestUserNotificationUpdate(ctx context.Context, req *v1.UserNotificationUpdate) (*v1.UserNotificationResponse, error) {
-	ctx, span := tracer.Start(ctx, "RequestUserNotificationUpdate")
+// RequestUserNotificationUpdate records a changed contact address.
+func (h *NotificationHandler) RequestUserNotificationUpdate(
+	ctx context.Context,
+	req *v1.UserNotificationUpdate,
+) (*v1.UserNotificationResponse, error) {
+	_, span := tracer.Start(ctx, "RequestUserNotificationUpdate")
 	defer span.End()
 
-	h.Logger.Info("Received user notification update request")
-	telemetry.WithTraceID(ctx, h.Logger).Info("Received user notification update request")
-
-	var responseMessage string
-	notifReq := &model.NotifEntry{}
-
-	notifReq.ContactInfo = req.ContactInfo
-	notifReq.Id = req.ServiceId
-
-	err := h.NotificationNode.NotifSent(ctx, *notifReq)
-	if err != nil {
-		h.Logger.Error("Failed to update user notification", zap.Error(err))
-		telemetry.WithTraceID(ctx, h.Logger).Error("Failed to update user notification", zap.Error(err))
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-		responseMessage = err.Error()
-		return &v1.UserNotificationResponse{Success: v1.Status_FAILURE, ResponseMessage: &responseMessage}, err
+	if req == nil {
+		return nil, statusError(codes.InvalidArgument, "request is required")
+	}
+	if req.ServiceId == "" {
+		return nil, statusError(codes.InvalidArgument, "service_id is required")
+	}
+	if req.ContactInfo == "" {
+		return nil, statusError(codes.InvalidArgument, "contact_info is required")
 	}
 
-	h.Logger.Info("User notification updated successfully")
-	telemetry.WithTraceID(ctx, h.Logger).Info("User notification updated successfully")
-	span.SetStatus(codes.Ok, "")
-	responseMessage = "User notification updated successfully"
-	return &v1.UserNotificationResponse{Success: v1.Status_SUCCESS, ResponseMessage: &responseMessage}, nil
+	entry := notifEntryFromUpdate(req)
+
+	// Upsert. A contact change is normally a re-registration of the same
+	// (service_id, contact_info) pair, so a duplicate insert means "update",
+	// not "fail".
+	if err := h.NotificationNode.StoreNotif(ctx, entry); err != nil {
+		if errors.Is(err, sql.ErrNoRows) || isUniqueViolation(err) {
+			entry.Sent = true
+			if err := h.NotificationNode.NotifSent(ctx, entry); err != nil {
+				span.RecordError(err)
+				return nil, statusError(codes.Internal, err.Error())
+			}
+		} else {
+			span.RecordError(err)
+			return nil, statusError(codes.Internal, err.Error())
+		}
+	}
+
+	span.SetStatus(otelcodes.Ok, "")
+	return &v1.UserNotificationResponse{Success: v1.Status_SUCCESS}, nil
 }
 
-// TODO requires P2P interface with auth service
-func (h *NotificationHandler) RequestTFA(ctx context.Context, req *v1.TFARequest) (*v1.TFAResponse, error) {
-	ctx, span := tracer.Start(ctx, "RequestTFA")
+// RequestTFA is NOT implemented.
+//
+// The previous implementation returned Status_SUCCESS unconditionally without
+// generating, storing or sending anything. A caller gating a login on that
+// response would believe a second factor had been delivered when none was, which
+// is worse than an outright failure: the failure is loud, the false success is
+// silent.
+//
+// See docs/NOTIFICATIONS_SERVICE.md for the architectural question of where a
+// TFA challenge should actually be minted and verified. It belongs in the auth
+// service, not in a notification contract.
+func (h *NotificationHandler) RequestTFA(
+	ctx context.Context,
+	req *v1.TFARequest,
+) (*v1.TFAResponse, error) {
+	_, span := tracer.Start(ctx, "RequestTFA")
 	defer span.End()
 
-	return &v1.TFAResponse{ServiceId: h.NotificationNode.Service_ID, Username: req.Username, Success: v1.Status_SUCCESS}, nil
+	err := errors.New(
+		"two-factor delivery is not implemented: this RPC returns Unimplemented " +
+			"rather than reporting success it did not achieve. Mint and verify TFA " +
+			"challenges in the auth service")
+	span.RecordError(err)
+	h.Logger.Warn("RequestTFA called but not implemented",
+		zap.String("username", req.GetUsername()))
+
+	return nil, statusError(codes.Unimplemented, err.Error())
+}
+
+// ---------------------------------------------------------------------------
+// helpers
+// ---------------------------------------------------------------------------
+
+// failure builds an InvalidArgument status error and marks the span.
+func failure(span trace.Span, message string) (*v1.NotificationResponse, error) {
+	span.SetStatus(otelcodes.Error, message)
+	return nil, statusError(codes.InvalidArgument, message)
+}
+
+// statusError wraps a gRPC status code and message.
+//
+// Every handler returns either a response or an error, never both. gRPC discards
+// the response whenever err is non-nil, so the previous pattern of returning a
+// populated NotificationResponse alongside an error made every failure body
+// unreachable by clients.
+func statusError(code codes.Code, message string) error {
+	return status.Error(code, message)
+}
+
+// notifEntryFromUpdate builds a record from a contact-address update.
+//
+// The previous handler populated only ContactInfo and Id, silently dropping the
+// username and never applying the "@ means email, otherwise phone" heuristic the
+// proto describes.
+func notifEntryFromUpdate(req *v1.UserNotificationUpdate) model.NotifEntry {
+	method := model.Email
+	if !looksLikeEmail(req.ContactInfo) {
+		method = model.Mobile
+	}
+
+	return model.NotifEntry{
+		ServiceId:   req.ServiceId,
+		ContactInfo: req.ContactInfo,
+		Method:      method,
+		Importance:  1,
+		Data:        map[string]string{"username": req.Username},
+		CreatedAt:   time.Now().UTC(),
+	}
+}
+
+// isUniqueViolation reports a primary-key collision.
+//
+// SQLite reports these as "UNIQUE constraint failed: ...".
+func isUniqueViolation(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "UNIQUE constraint failed")
+}
+
+// looksLikeEmail applies the proto's heuristic.
+func looksLikeEmail(s string) bool {
+	at := strings.Index(s, "@")
+	return at > 0 && at < len(s)-1
 }

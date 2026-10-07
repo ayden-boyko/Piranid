@@ -11,92 +11,103 @@ import (
 	"syscall"
 	"time"
 
+	"go.uber.org/zap"
+
 	node "Piranid/node"
 	utils "Piranid/pkg"
 	telemetry "Piranid/pkg/telemetry"
 
 	core "github.com/ayden-boyko/Piranid/nodes/Event_Queue/eventcore"
-
-	_ "modernc.org/sqlite"
-
-	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-// TODO: add ssl certs
+// DefaultQueuePort is used when RABBIT_MQ_PORT is unset.
+const DefaultQueuePort = "5672"
 
-// Code for Event node
 func main() {
-
 	ctx := context.Background()
 
-	fmt.Println("Creating a new Event Node...")
-	// Create a new HTTP server. This server will be responsible for sending
-	// notifications
-	server := &core.EventNode{Node: node.NewNode(), Service_ID: utils.NewServiceID("EVNT")}
+	fmt.Println("Creating a new Event Queue Node...")
 
-	// telemetry setup
-	// Set up telemetry
+	// Telemetry first, so a configuration failure is reported through the same
+	// pipeline as everything else.
 	collectorAddr := os.Getenv("OTEL_COLLECTOR_ADDR")
 	if collectorAddr == "" {
 		collectorAddr = "localhost:4317"
 	}
-	otelShutdown, err := telemetry.SetupOTelSDK(ctx, "Auth Node", collectorAddr)
+	otelShutdown, err := telemetry.SetupOTelSDK(ctx, "event_queue", collectorAddr)
 	if err != nil {
 		log.Fatalf("failed to set up telemetry: %v", err)
 	}
 	defer otelShutdown(ctx)
 
-	// Set up logging
-	logger, err := telemetry.NewLogger("notifications")
+	// The service name here used to be "Auth Node" and the logger name
+	// "notifications", so dashboards attributed this node's telemetry to two
+	// other services.
+	logger, err := telemetry.NewLogger("event_queue")
 	if err != nil {
 		log.Fatalf("failed to setup logger: %v", err)
 	}
 	defer logger.Sync()
 
-	fmt.Println("Event Node created...")
-
-	// get the port for the message queue from the environment variable, and connect to it
-	MQ_PORT := os.Getenv("RABBIT_MQ_PORT")
-	if MQ_PORT == "" {
-		log.Panic("RABBIT_MQ_PORT environment variable not set")
+	port := os.Getenv("EVENT_QUEUE_PORT")
+	if port == "" {
+		logger.Error("EVENT_QUEUE_PORT is not set")
+		os.Exit(1)
 	}
 
-	fmt.Println("Dialing Message Queue...")
-	conn, err := amqp.Dial(fmt.Sprintf("amqp://guest:guest@rabbitmq:%s/", MQ_PORT))
+	brokerHost := os.Getenv("RABBIT_MQ_HOST")
+	if brokerHost == "" {
+		brokerHost = "rabbitmq"
+	}
+	brokerPort := os.Getenv("RABBIT_MQ_PORT")
+	if brokerPort == "" {
+		// Previously this was log.Panic, which meant the variable was
+		// mandatory. The Kubernetes manifest never set it, so the pod
+		// crash-looped before reaching any handler. A documented default is
+		// better than an unstartable deployment.
+		logger.Warn("RABBIT_MQ_PORT is not set, using default", zap.String("port", brokerPort))
+		brokerPort = DefaultQueuePort
+	}
+	brokerUser := envOr("RABBIT_MQ_USER", "guest")
+	brokerPass := envOr("RABBIT_MQ_PASSWORD", "guest")
+
+	brokerURL := fmt.Sprintf("amqp://%s:%s@%s:%s/", brokerUser, brokerPass, brokerHost, brokerPort)
+
+	// Fail fast on a bad broker configuration, but do not log.Panic: that
+	// skips the deferred telemetry shutdown and logger flush.
+	server, err := core.NewEventNode(node.NewNode(), utils.NewServiceID("EVNT"), brokerURL, logger)
 	if err != nil {
-		log.Panicf("%s: %s", "Failed to connect to RabbitMQ", err)
+		logger.Error("could not connect to RabbitMQ", zap.Error(err))
+		os.Exit(1)
 	}
 
-	defer conn.Close()
-
-	// Run the server in a separate goroutine. This allows the server to run
-	// concurrently with the other code.
 	go func() {
-		// Run the server and check for errors. This will block until the server
-		// is shutdown.
-		fmt.Println("Starting Event Node...")
-		if err := server.Run(fmt.Sprintf(":%s", os.Getenv("EVENT_QUEUE_PORT")), func() {
-			server.RegisterRoutes(conn, ctx, logger) // Pass the connection to the handlers
+		fmt.Println("Starting Event Queue Node...")
+		if err := server.Run(":"+port, func() {
+			server.RegisterRoutes(ctx, logger)
 		}); !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("Error running Event Node: %v", err)
+			logger.Error("http server stopped", zap.Error(err))
+			os.Exit(1)
 		}
 	}()
 
-	// Create a channel to receive signals. This will allow us to gracefully
-	// shutdown the server when it receives a SIGINT or SIGTERM.
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-
-	// Wait for a signal to be received.
 	<-sigChan
 
-	// Create a context with a timeout to shut down the server.
 	shutdownCtx, shutdownCancel := context.WithTimeout(ctx, 10*time.Second)
 	defer shutdownCancel()
 
-	// Shutdown the server. This will block until the server is shutdown.
-	if err := server.SafeShutdown(shutdownCtx); err != nil {
-		log.Fatalf("\n Event Node shutdown failed: %v", err)
+	if err := server.SafeShutdown(shutdownCtx, logger); err != nil {
+		logger.Error("shutdown failed", zap.Error(err))
+		os.Exit(1)
 	}
-	log.Println("\n Event Node shutdown safely completed")
+	log.Println("\n Event Queue Node shutdown safely completed")
+}
+
+func envOr(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
 }

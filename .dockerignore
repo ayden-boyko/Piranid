@@ -1,0 +1,41 @@
+# Keep the build context small and free of secrets.
+#
+# Every service Dockerfile does COPY . . from the repo root, because the modules
+# depend on pkg and pkg/node via go.work replace directives. Without this, .git,
+# generated keys, and local databases are copied into the build context and
+# potentially into an image layer.
+
+# Version control
+.git
+.gitignore
+
+# Signing keys. These must never reach an image layer: an image is readable by
+# anyone who can pull it, and a key in an image cannot be rotated without a
+# rebuild. The auth node mounts its key from a Secret at runtime.
+*.pem
+*.key
+*.p12
+*.pfx
+jwt-keys/
+
+# Local databases and build artifacts
+*.db
+*.db-shm
+*.db-wal
+auth.db
+notification.db
+*.test
+*.out
+
+# Documentation and local tooling that the build does not need
+docs/
+tests/
+scripts/
+.vscode/
+.github/
+*.md
+
+# Editor and OS noise
+.DS_Store
+.idea/
+.vs/

@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    name: fmt, vet and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          # Must match go.work.
+          go-version: '1.26.x'
+          cache: false
+
+      - name: gofmt
+        run: |
+          out=$(gofmt -l nodes pkg)
+          if [ -n "$out" ]; then
+            echo "Unformatted files:"
+            echo "$out"
+            exit 1
+          fi
+
+      - name: build
+        run: make build
+
+      - name: vet
+        run: make vet
+
+      - name: test
+        run: make test
+
+  race:
+    name: race detector
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+          cache: false
+      - run: make test-race
+
+  manifests:
+    name: manifests validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - run: pip install pyyaml
+      - run: python3 scripts/validate-manifests.py
+
+  # go.work.sum once shipped committed merge-conflict markers, which made every
+  # go command fail with "malformed go.sum". Nothing in the diff explained why,
+  # and there was no CI to catch it.
+  no-conflict-markers:
+    name: no conflict markers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: check tracked files
+        run: |
+          if git grep -nE '^(<<<<<<<|=======|>>>>>>>)' -- \
+            '*.go' '*.sql' '*.yaml' '*.yml' '*.sum' '*.mod' '*.html' '*.md' Makefile; then
+            echo "Conflict markers found in tracked files"
+            exit 1
+          fi
+          echo "no conflict markers"
+
+  docker:
+    name: images build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      # Each build takes the repository root as context because the modules
+      # depend on pkg through the Go workspace.
+      - name: auth
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: nodes/Auth/AUTH.Dockerfile
+          push: false
+      - name: event-queue
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: nodes/Event_Queue/EVENT.Dockerfile
+          push: false
+      - name: notifications
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: nodes/Notifications/NOTIF.Dockerfile
+          push: false

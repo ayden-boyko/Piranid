@@ -1,3 +1,16 @@
+# Promtail for the DOCKER compose stack.
+#
+# This file scrapes the Docker socket, which is correct here because compose runs
+# these containers under Docker.
+#
+# It does NOT work on the Kubernetes cluster: Piranid uses containerd, where
+# /var/run/docker.sock does not exist, so this configuration discovers no
+# containers. The in-cluster equivalent reads /var/log/containers through a
+# filelog/kubernetes_sd setup and is defined in
+# manifests/logging-config.yaml (ConfigMap promtail-config).
+#
+# Positions live on /tmp here, so a restart re-ships recent logs. The
+# Kubernetes variant mounts a volume for the same reason.
 server:
   http_listen_port: 9080
   grpc_listen_port: 0
