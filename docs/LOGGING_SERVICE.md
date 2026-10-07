@@ -17,8 +17,7 @@ Related: [AUTH_SERVICE.md](AUTH_SERVICE.md) · [EVENT_QUEUE_SERVICE.md](EVENT_QU
 5. [Files and descriptors](#5-files-and-descriptors)
 6. [Instrumentation in the services](#6-instrumentation-in-the-services)
 7. [Deployment](#7-deployment)
-8. [Known problems](#8-known-problems)
-9. [Remaining work](#9-remaining-work)
+8. [Remaining work](#8-remaining-work)
 
 ---
 
@@ -27,11 +26,11 @@ Related: [AUTH_SERVICE.md](AUTH_SERVICE.md) · [EVENT_QUEUE_SERVICE.md](EVENT_QU
 Six components that collect, store and visualise the three OpenTelemetry signal
 types. **There is no application code here** — this node is pure configuration.
 
-| Signal | Stored in | Query UI |
-|---|---|---|
-| Traces | Tempo | Grafana |
-| Metrics | Prometheus | Grafana |
-| Logs | Loki | Grafana |
+| Signal  | Stored in  | Query UI |
+| ------- | ---------- | -------- |
+| Traces  | Tempo      | Grafana  |
+| Metrics | Prometheus | Grafana  |
+| Logs    | Loki       | Grafana  |
 
 Everything runs on a Pi cluster, so the whole stack is budgeted against roughly
 140–165MB RSS per Pi Zero 2W. Every component now declares explicit memory limits
@@ -40,12 +39,12 @@ has a size-bounded TSDB.
 
 Two deployment shapes exist and they are not interchangeable:
 
-| | Compose | Kubernetes |
-|---|---|---|
-| Files | `nodes/Logging/` | `manifests/logging-*.yaml` |
-| Log discovery | Docker socket | `kubernetes_sd_configs` over `/var/log/containers` |
-| Topology | 6 containers on a bridge network | 6 Deployments + Services |
-| Storage | named volumes | PVCs |
+|               | Compose                          | Kubernetes                                         |
+| ------------- | -------------------------------- | -------------------------------------------------- |
+| Files         | `nodes/Logging/`                 | `manifests/logging-*.yaml`                         |
+| Log discovery | Docker socket                    | `kubernetes_sd_configs` over `/var/log/containers` |
+| Topology      | 6 containers on a bridge network | 6 Deployments + Services                           |
+| Storage       | named volumes                    | PVCs                                               |
 
 The difference in log discovery is not a stylistic choice — see
 [§8.2](#82-promtail-cannot-see-containerd-pods).
@@ -113,15 +112,15 @@ processors:
     send_batch_size: 1024
 
 exporters:
-  otlp/tempo:  { endpoint: tempo:4417, tls: { insecure: true } }
-  loki:        { endpoint: "http://loki:3100/loki/api/v1/push" }
-  prometheus:  { endpoint: 0.0.0.0:8889 }
+  otlp/tempo: { endpoint: tempo:4417, tls: { insecure: true } }
+  loki: { endpoint: "http://loki:3100/loki/api/v1/push" }
+  prometheus: { endpoint: 0.0.0.0:8889 }
 
 service:
   pipelines:
-    traces:  { receivers: [otlp], processors: [batch], exporters: [otlp/tempo] }
+    traces: { receivers: [otlp], processors: [batch], exporters: [otlp/tempo] }
     metrics: { receivers: [otlp], processors: [batch], exporters: [prometheus] }
-    logs:    { receivers: [otlp], processors: [batch], exporters: [loki] }
+    logs: { receivers: [otlp], processors: [batch], exporters: [loki] }
 ```
 
 The collector is a pure fan-out: one OTLP receiver, three signal-specific
@@ -133,12 +132,12 @@ exposes scraped metrics on `:8889` and Prometheus pulls from it (§4.3).
 
 ### Signal flow
 
-| Signal | Service → | Collector pipeline | Store | Grafana datasource |
-|---|---|---|---|---|
-| Traces | OTLP/gRPC `:4317` | `traces` → `otlp/tempo` | Tempo `:4417` | Tempo `:3200` |
-| Logs | OTLP/gRPC `:4317` | `logs` → `loki` | Loki `:3100` | Loki `:3100` |
-| Metrics | OTLP/gRPC `:4317` | `metrics` → `prometheus` | collector `:8889` → scraped | Prometheus `:9090` |
-| Container stdout | Promtail → Loki | — | Loki `:3100` | Loki `:3100` |
+| Signal           | Service →         | Collector pipeline       | Store                       | Grafana datasource |
+| ---------------- | ----------------- | ------------------------ | --------------------------- | ------------------ |
+| Traces           | OTLP/gRPC `:4317` | `traces` → `otlp/tempo`  | Tempo `:4417`               | Tempo `:3200`      |
+| Logs             | OTLP/gRPC `:4317` | `logs` → `loki`          | Loki `:3100`                | Loki `:3100`       |
+| Metrics          | OTLP/gRPC `:4317` | `metrics` → `prometheus` | collector `:8889` → scraped | Prometheus `:9090` |
+| Container stdout | Promtail → Loki   | —                        | Loki `:3100`                | Loki `:3100`       |
 
 ---
 
@@ -147,7 +146,7 @@ exposes scraped metrics on `:8889` and Prometheus pulls from it (§4.3).
 ### 4.1 Tempo — traces
 
 ```yaml
-server:   { http_listen_port: 3200 }
+server: { http_listen_port: 3200 }
 distributor:
   receivers:
     otlp:
@@ -158,7 +157,7 @@ storage:
   trace:
     backend: local
     local: { path: /tempo/traces }
-    wal:    { path: /tempo/wal }
+    wal: { path: /tempo/wal }
 ```
 
 Local filesystem backend — no object store. Appropriate for a single-node Pi
@@ -185,8 +184,9 @@ schema_config:
       schema: v13
       index: { prefix: index_, period: 24h }
 storage_config:
-  tsdb_shipper: { active_index_directory: /loki/index, cache_location: /loki/cache }
-  filesystem:   { directory: /loki/chunks }
+  tsdb_shipper:
+    { active_index_directory: /loki/index, cache_location: /loki/cache }
+  filesystem: { directory: /loki/chunks }
 limits_config:
   reject_old_samples: true
   reject_old_samples_max_age: 168h
@@ -201,9 +201,9 @@ than 168h (7 days) are rejected outright.
 global: { scrape_interval: 15s, evaluation_interval: 15s }
 scrape_configs:
   - job_name: prometheus
-    static_configs: [ { targets: ["localhost:9090"] } ]
+    static_configs: [{ targets: ["localhost:9090"] }]
   - job_name: otel-collector
-    static_configs: [ { targets: ["otel-collector:8889"] } ]
+    static_configs: [{ targets: ["otel-collector:8889"] }]
 ```
 
 Only two scrape targets: itself and the collector's metrics exporter. **No
@@ -217,18 +217,27 @@ generating metrics at all.
 ### 4.4 Promtail — container log shipping
 
 ```yaml
-server:   { http_listen_port: 9080, grpc_listen_port: 0 }
+server: { http_listen_port: 9080, grpc_listen_port: 0 }
 positions: { filename: /tmp/positions.yaml }
-clients:  [ { url: "http://loki:3100/loki/api/v1/push" } ]
+clients: [{ url: "http://loki:3100/loki/api/v1/push" }]
 scrape_configs:
   - job_name: docker
     docker_sd_configs:
       - host: unix:///var/run/docker.sock
         refresh_interval: 5s
     relabel_configs:
-      - { source_labels: [__meta_docker_container_name], target_label: container }
-      - { source_labels: [__meta_docker_container_log_stream], target_label: stream }
-      - { source_labels: [__meta_docker_compose_service], target_label: service }
+      - {
+          source_labels: [__meta_docker_container_name],
+          target_label: container,
+        }
+      - {
+          source_labels: [__meta_docker_container_log_stream],
+          target_label: stream,
+        }
+      - {
+          source_labels: [__meta_docker_compose_service],
+          target_label: service,
+        }
 ```
 
 Discovers containers through the Docker socket and ships their stdout/stderr to
@@ -273,26 +282,26 @@ No dashboards are provisioned; only datasources. Credentials are
 
 ## 5. Files and descriptors
 
-| File | Lines | Role |
-|---|---:|---|
-| `otel-collector/config.yaml` | 37 | Fan-out: OTLP in, Tempo/Loki/Prometheus out. |
-| `tempo/config.yaml` | 17 | Trace storage, local filesystem backend. |
-| `loki/config.yaml` | 33 | Log storage, TSDB schema v13, filesystem chunks. |
-| `prometheus/config.yaml` | 14 | 15s scrape of itself and the collector. |
-| `promtail/config.yaml` | 23 | Docker log discovery and shipping. |
-| `grafana/provisioning/datasources/datasources.yaml` | 29 | Three datasources + trace-to-log correlation. |
-| `docker-compose.yaml` | 96 | All six components, bridge network, four named volumes. |
+| File                                                | Lines | Role                                                    |
+| --------------------------------------------------- | ----: | ------------------------------------------------------- |
+| `otel-collector/config.yaml`                        |    37 | Fan-out: OTLP in, Tempo/Loki/Prometheus out.            |
+| `tempo/config.yaml`                                 |    17 | Trace storage, local filesystem backend.                |
+| `loki/config.yaml`                                  |    33 | Log storage, TSDB schema v13, filesystem chunks.        |
+| `prometheus/config.yaml`                            |    14 | 15s scrape of itself and the collector.                 |
+| `promtail/config.yaml`                              |    23 | Docker log discovery and shipping.                      |
+| `grafana/provisioning/datasources/datasources.yaml` |    29 | Three datasources + trace-to-log correlation.           |
+| `docker-compose.yaml`                               |    96 | All six components, bridge network, four named volumes. |
 
 ### Pinned versions
 
-| Component | Version |
-|---|---|
-| `grafana/loki` | 3.4.2 |
-| `grafana/promtail` | 3.4.2 |
-| `grafana/tempo` | 2.7.2 |
-| `prom/prometheus` | v3.2.1 |
+| Component                              | Version |
+| -------------------------------------- | ------- |
+| `grafana/loki`                         | 3.4.2   |
+| `grafana/promtail`                     | 3.4.2   |
+| `grafana/tempo`                        | 2.7.2   |
+| `prom/prometheus`                      | v3.2.1  |
 | `otel/opentelemetry-collector-contrib` | 0.123.0 |
-| `grafana/grafana` | 11.6.1 |
+| `grafana/grafana`                      | 11.6.1  |
 
 All pinned. Loki and Promtail are on the same version, which matters — they are
 released together and mismatched versions can fail to talk.
@@ -304,18 +313,18 @@ No persistence for Promtail positions.
 
 ### Ports
 
-| Port | Component | Protocol | Exposed to host |
-|---:|---|---|---|
-| 4317 | Collector | OTLP gRPC | yes |
-| 4318 | Collector | OTLP HTTP | yes |
-| 8889 | Collector | metrics | yes |
-| 3100 | Loki | HTTP | yes |
-| 3200 | Tempo | HTTP | yes |
-| 4417 | Tempo | OTLP gRPC | yes |
-| 4418 | Tempo | OTLP HTTP | yes |
-| 9090 | Prometheus | HTTP | yes |
-| 3000 | Grafana | HTTP | yes |
-| 9080 | Promtail | HTTP | **no** |
+| Port | Component  | Protocol  | Exposed to host |
+| ---: | ---------- | --------- | --------------- |
+| 4317 | Collector  | OTLP gRPC | yes             |
+| 4318 | Collector  | OTLP HTTP | yes             |
+| 8889 | Collector  | metrics   | yes             |
+| 3100 | Loki       | HTTP      | yes             |
+| 3200 | Tempo      | HTTP      | yes             |
+| 4417 | Tempo      | OTLP gRPC | yes             |
+| 4418 | Tempo      | OTLP HTTP | yes             |
+| 9090 | Prometheus | HTTP      | yes             |
+| 3000 | Grafana    | HTTP      | yes             |
+| 9080 | Promtail   | HTTP      | **no**          |
 
 Eight of ten ports are published to the host with no authentication and no TLS.
 For a cluster on a private network this is tolerable; on a shared or routed
@@ -355,11 +364,11 @@ unchanged when the span context is invalid.
 
 ### Adoption across the services
 
-| Service | OTel service name | Logger name | Server spans | `WithTraceID` |
-|---|---|---|---|---|
-| Auth | `Auth Node` | `auth` | yes | yes |
-| Event_Queue | `event_queue` | `event_queue` | yes (`HTTPMiddleware`) | via context |
-| Notifications | `notifications` | `notifications` | yes (unary + stream interceptor) | yes |
+| Service       | OTel service name | Logger name     | Server spans                     | `WithTraceID` |
+| ------------- | ----------------- | --------------- | -------------------------------- | ------------- |
+| Auth          | `Auth Node`       | `auth`          | yes                              | yes           |
+| Event_Queue   | `event_queue`     | `event_queue`   | yes (`HTTPMiddleware`)           | via context   |
+| Notifications | `notifications`   | `notifications` | yes (unary + stream interceptor) | yes           |
 
 All three now report a correct identity, produce server spans derived from the
 incoming trace context, and correlate log lines with the active span. That is
@@ -413,14 +422,14 @@ This replaces a single Deployment named `logging` referencing an image
 (`containerPort: 8084`, Service target `8083`, env `8083`), and with no
 containers for the six stateful components it was meant to represent.
 
-| Component | Port(s) | Storage | Limits |
-|---|---|---|---|
-| loki | 3100 | PVC | 512Mi |
-| tempo | 3200, 4417 | PVC | 512Mi |
-| prometheus | 9090 | PVC | 512Mi |
-| otel-collector | 4317, 4318, 8889, 13133 | — | 256Mi |
-| promtail | 9080 | `emptyDir` (positions) | 128Mi |
-| grafana | 3000 (NodePort 30300) | PVC | 256Mi |
+| Component      | Port(s)                 | Storage                | Limits |
+| -------------- | ----------------------- | ---------------------- | ------ |
+| loki           | 3100                    | PVC                    | 512Mi  |
+| tempo          | 3200, 4417              | PVC                    | 512Mi  |
+| prometheus     | 9090                    | PVC                    | 512Mi  |
+| otel-collector | 4317, 4318, 8889, 13133 | —                      | 256Mi  |
+| promtail       | 9080                    | `emptyDir` (positions) | 128Mi  |
+| grafana        | 3000 (NodePort 30300)   | PVC                    | 256Mi  |
 
 Only Grafana is exposed outside the cluster. The previous setup published eight
 of ten ports to the host with no authentication.
@@ -439,7 +448,7 @@ Prometheus scrapes the services directly as well as through the collector:
 
 ```yaml
 - job_name: piranid-services
-  kubernetes_sd_configs: [ { role: pod } ]
+  kubernetes_sd_configs: [{ role: pod }]
   relabel_configs:
     - source_labels: [__meta_kubernetes_pod_label_app]
       regex: (auth|event-queue|notifications)
@@ -450,116 +459,16 @@ All service metrics previously flowed through the collector, so a collector
 outage removed every service's metrics with no independent record that anything
 was still up. This makes that diagnosable.
 
-## 8. Known problems
+## 8. Remaining work
 
-Each entry records what was found during the audit and what was done. What
-remains open is in [§9](#9-remaining-work).
-
-### 8.1 Fixed — the Kubernetes manifest could not deploy the stack
-
-One Deployment, one container, a non-existent image, three contradictory port
-numbers, and no components. Replaced with 6 Deployments, 6 Services, 6 ConfigMaps
-and 4 PVCs across three files. See [§7](#7-deployment).
-
-### 8.2 Fixed — Promtail could not see containerd pods
-
-The config used `host: unix:///var/run/docker.sock`. Piranid targets K3s, where
-the runtime is containerd and that socket does not exist, so Promtail discovered
-no containers and shipped nothing.
-
-**Fixed** in the Kubernetes config with `kubernetes_sd_configs` over
-`role: pod`, a `cri` pipeline stage to strip the CRI wrapper, and labels extracted
-for `namespace`, `pod`, `service` and `container`. The compose config still uses
-the Docker socket, which is correct there, and now says so explicitly so the
-divergence is not mistaken for an oversight.
-
-### 8.3 Fixed — trace-to-log correlation was largely broken
-
-Grafana's `tracesToLogsV2` filters on `filterByTraceID`, but `WithTraceID` was
-called only in Notifications and only on some paths. Auth logged without one, and
-Event_Queue's identifier was wrong anyway.
-
-**Fixed.** `pkg/telemetry.HTTPMiddleware` and `UnaryServerInterceptor` start spans
-from the incoming trace context, so traces chain across services rather than
-starting fresh. Handlers derive spans from `r.Context()`. Auth uses
-`telemetry.WithTraceID` on every log call.
-
-### 8.4 Fixed — no end-to-end traces
-
-No `otelhttp` wrapper and no gRPC interceptor, so no server spans, and
-Event_Queue derived spans from a boot-time context.
-
-**Fixed** with `pkg/telemetry.HTTPMiddleware` for HTTP and
-`UnaryServerInterceptor`/`StreamServerInterceptor` for gRPC. These are small local
-implementations rather than `otelhttp`: the upstream package forced an OpenTelemetry
-SDK upgrade that broke `pkg/telemetry`, which is a poor trade on a memory budget.
-
-### 8.5 Fixed — wrong service identity in two of three nodes
-
-Event_Queue reported `service.name = "Auth Node"` and `service = notifications`.
-
-**Fixed.** Both are `event_queue`.
-
-### 8.6 Fixed — Prometheus depended on the collector for everything
-
-Fixed with the direct `piranid-services` scrape job. See
-[§7](#7-deployment).
-
-### 8.7 Fixed — no limits in compose, no dashboards
-
-**Fixed** for limits. Dashboards are still not provisioned — only datasources —
-so Grafana presents storage without a UI. See [§9](#9-remaining-work).
-
-### 8.8 Fixed — unbounded growth
-
-Loki had no volume cap and rejected only samples older than 168h; Tempo had no
-retention; Prometheus had no retention flags.
-
-**Fixed.** Loki has `retention_period: 168h` and a running compactor with
-retention enabled. Tempo has `block_retention: 168h`. Prometheus runs with
-`--storage.tsdb.retention.time=7d` and `--storage.tsdb.retention.size=512MB`.
-
-### 8.9 Fixed — everything unauthenticated
-
-Eight of ten ports were published to the host with no auth and no TLS; Grafana ran
-at `admin`/`admin`.
-
-**Fixed.** Only Grafana is published, as a NodePort, with credentials from a Secret
-and anonymous access disabled. The remaining components are `ClusterIP`-only,
-reachable inside the cluster. OTLP remains insecure, which is appropriate on a
-trusted cluster network and is called out in the config comments.
-
-### 8.10 Fixed — Promtail positions not persisted
-
-`positions: /tmp/positions.yaml` sat on the container writable layer, so a
-restart lost tail positions and re-shipped logs.
-
-**Fixed.** Positions live on a volume in the Kubernetes config.
-
-### 8.11 Fixed — no memory limiter in the collector
-
-A telemetry spike could OOM the collector, and on a Pi that takes down the node
-rather than just the collector.
-
-**Fixed.** A `memory_limiter` processor runs ahead of `batch` in every pipeline,
-at 75% with a 20% spike allowance.
-
-### 8.12 Fixed — no health endpoint on the collector
-
-**Fixed.** A `health_check` extension on `:13133`, used by the liveness probe.
-
----
-
-## 9. Remaining work
-
-| # | Action | Why |
-|---|---|---|
-| 1 | Provision at least one Grafana dashboard | Datasources exist, so the cluster gets storage without a UI. The highest-value remaining item. |
-| 2 | Alert on delivery failure and error rates | Nothing watches whether the services are healthy. |
-| 3 | Move storage off SD cards | The PVCs are backed by the node's filesystem. Metrics storage on an SD card is a wear and failure risk. |
-| 4 | TLS for the OTLP path | `insecure: true` is fine on a trusted cluster network, not across a routed one. mTLS with cert-manager would be the fix. |
-| 5 | Restrict Grafana's NodePort or front it with an ingress | It is the one component still reachable from outside the cluster. |
-| 6 | Reconcile `docs/observability-architecture.md` | It predates the current config and its memory budget no longer matches. |
-| 7 | Sample traces above a volume threshold | Everything is stored for 7 days regardless of rate. |
+| #   | Action                                                  | Why                                                                                                                      |
+| --- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Provision at least one Grafana dashboard                | Datasources exist, so the cluster gets storage without a UI. The highest-value remaining item.                           |
+| 2   | Alert on delivery failure and error rates               | Nothing watches whether the services are healthy.                                                                        |
+| 3   | Move storage off SD cards                               | The PVCs are backed by the node's filesystem. Metrics storage on an SD card is a wear and failure risk.                  |
+| 4   | TLS for the OTLP path                                   | `insecure: true` is fine on a trusted cluster network, not across a routed one. mTLS with cert-manager would be the fix. |
+| 5   | Restrict Grafana's NodePort or front it with an ingress | It is the one component still reachable from outside the cluster.                                                        |
+| 6   | Reconcile `docs/observability-architecture.md`          | It predates the current config and its memory budget no longer matches.                                                  |
+| 7   | Sample traces above a volume threshold                  | Everything is stored for 7 days regardless of rate.                                                                      |
 
 Items 1 and 2 are what turn collected data into something acted on.

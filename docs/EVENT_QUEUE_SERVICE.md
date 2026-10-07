@@ -24,9 +24,8 @@ Related: [AUTH_SERVICE.md](AUTH_SERVICE.md) · [NOTIFICATIONS_SERVICE.md](NOTIFI
 6. [Data model](#6-data-model)
 7. [Configuration](#7-configuration)
 8. [Security posture](#8-security-posture)
-9. [Known problems](#9-known-problems)
-10. [Verification performed](#10-verification-performed)
-11. [Remaining work](#11-remaining-work)
+9. [Verification performed](#9-verification-performed)
+10. [Remaining work](#10-remaining-work)
 
 ---
 
@@ -48,17 +47,17 @@ keys `auth.*`, `data.*`, `logging.*`. **No code reads that file, and no code
 creates that topology.** It is a design sketch, not a description of the running
 system.
 
-| Capability | Status |
-|---|---|
-| Declare queues per service | Implemented |
-| List services and queues | Implemented |
-| Drain-then-delete a queue | Implemented, cannot complete (§9.5) |
-| Drain-then-delete a service | Implemented, cannot complete (§9.5) |
-| Publish messages | Not implemented |
-| Consume messages | Not implemented |
-| Exchanges and bindings | Not implemented |
-| Broker reconnection | Implemented, with reconnect and registry reset |
-| Tests | 36, in `models/` and `handlers/` |
+| Capability                  | Status                                         |
+| --------------------------- | ---------------------------------------------- |
+| Declare queues per service  | Implemented                                    |
+| List services and queues    | Implemented                                    |
+| Drain-then-delete a queue   | Implemented, cannot complete (§9.5)            |
+| Drain-then-delete a service | Implemented, cannot complete (§9.5)            |
+| Publish messages            | Not implemented                                |
+| Consume messages            | Not implemented                                |
+| Exchanges and bindings      | Not implemented                                |
+| Broker reconnection         | Implemented, with reconnect and registry reset |
+| Tests                       | 36, in `models/` and `handlers/`               |
 
 ---
 
@@ -150,8 +149,8 @@ Client                Handler              models.Services
 5. Remove from in-memory model     RemoveServiceQueue / RemoveService
 ```
 
-Steps 4 and 5 are what make this work. The draining marker blocks removal *while
-a drain is in flight*, which is its purpose — but the handler is the party that
+Steps 4 and 5 are what make this work. The draining marker blocks removal _while
+a drain is in flight_, which is its purpose — but the handler is the party that
 set it, so it must clear it once the broker delete has succeeded. Without that
 step the sequence deadlocks against itself; see [§9.5](#95-fixed--the-drain-protocol-could-never-complete).
 
@@ -164,17 +163,17 @@ Step 2 respects `r.Context()` and `DefaultDrainTimeout`, returning `504` with
 
 Registered in `eventcore/event_core.go:35-123`. `api_ver` defaults to `v1`.
 
-| Method | Pattern | Handler | Auth |
-|---|---|---|---|
-| any | `/api/{v}/event_test` | `EventTestHandler` | no |
-| GET | `/api/{v}/services` | `GetAllServicesHandler` | yes |
-| POST | `/api/{v}/services/{service_id}` | `AddServiceHandler` | yes |
-| GET | `/api/{v}/services/{service_id}` | `GetServiceHandler` | yes |
-| DELETE | `/api/{v}/services/{service_id}` | `RemoveServiceHandler` | yes |
-| POST | `/api/{v}/services/{service_id}/queue/{queue_id}` | `AddQueueHandler` | yes |
-| GET | `/api/{v}/services/{service_id}/queue/{queue_id}` | `GetQueueHandler` | yes |
-| DELETE | `/api/{v}/services/{service_id}/queue/{queue_id}` | `RemoveQueueHandler` | yes |
-| GET | `/healthz` | inline status | no |
+| Method | Pattern                                           | Handler                 | Auth |
+| ------ | ------------------------------------------------- | ----------------------- | ---- |
+| any    | `/api/{v}/event_test`                             | `EventTestHandler`      | no   |
+| GET    | `/api/{v}/services`                               | `GetAllServicesHandler` | yes  |
+| POST   | `/api/{v}/services/{service_id}`                  | `AddServiceHandler`     | yes  |
+| GET    | `/api/{v}/services/{service_id}`                  | `GetServiceHandler`     | yes  |
+| DELETE | `/api/{v}/services/{service_id}`                  | `RemoveServiceHandler`  | yes  |
+| POST   | `/api/{v}/services/{service_id}/queue/{queue_id}` | `AddQueueHandler`       | yes  |
+| GET    | `/api/{v}/services/{service_id}/queue/{queue_id}` | `GetQueueHandler`       | yes  |
+| DELETE | `/api/{v}/services/{service_id}/queue/{queue_id}` | `RemoveQueueHandler`    | yes  |
+| GET    | `/healthz`                                        | inline status           | no   |
 
 `{service_id}` and `{queue_id}` are read via `r.PathValue`. A body is optional
 and the path always takes precedence.
@@ -188,19 +187,19 @@ nothing.
 
 ## 5. Files and descriptors
 
-| File | Lines | Role |
-|---|---:|---|
-| `main.go` | 122 | Entrypoint. Telemetry, logger, broker config, HTTP serve, signal drain. No `log.Panic`. |
-| `eventcore/event_core.go` | 396 | `EventNode`, route registration, `Broker` with reconnect, auth middleware, `/healthz`. |
-| `handlers/routes.go` | 517 | All handler logic plus the drain-and-delete workflows. |
-| `models/services.go` | 195 | The `Services` registry with a typed error contract and correct locking. |
-| `models/service.go` | 176 | `Service`: AMQP channel, queue map, draining state, per-service locking. |
-| `models/service_queue.go` | 110 | `ServiceQueue`, `QueueDeclaration`, `declareQueue`. |
-| `models/amqp_table.go` | 79 | `map[string]string` → correctly typed `amqp.Table`. |
-| `transactions/*.go` | 5–18 | DTOs plus `error_resp.go` with stable error codes. |
-| `models/models_test.go` | — | 21 registry tests, including the deadlock and nil-map regressions. |
-| `handlers/handlers_test.go` | — | 15 HTTP tests over the real handlers and mux. |
-| `EVENT.Dockerfile` | 38 | Two-stage build → `event_server` on `alpine:3.20`. |
+| File                        | Lines | Role                                                                                    |
+| --------------------------- | ----: | --------------------------------------------------------------------------------------- |
+| `main.go`                   |   122 | Entrypoint. Telemetry, logger, broker config, HTTP serve, signal drain. No `log.Panic`. |
+| `eventcore/event_core.go`   |   396 | `EventNode`, route registration, `Broker` with reconnect, auth middleware, `/healthz`.  |
+| `handlers/routes.go`        |   517 | All handler logic plus the drain-and-delete workflows.                                  |
+| `models/services.go`        |   195 | The `Services` registry with a typed error contract and correct locking.                |
+| `models/service.go`         |   176 | `Service`: AMQP channel, queue map, draining state, per-service locking.                |
+| `models/service_queue.go`   |   110 | `ServiceQueue`, `QueueDeclaration`, `declareQueue`.                                     |
+| `models/amqp_table.go`      |    79 | `map[string]string` → correctly typed `amqp.Table`.                                     |
+| `transactions/*.go`         |  5–18 | DTOs plus `error_resp.go` with stable error codes.                                      |
+| `models/models_test.go`     |     — | 21 registry tests, including the deadlock and nil-map regressions.                      |
+| `handlers/handlers_test.go` |     — | 15 HTTP tests over the real handlers and mux.                                           |
+| `EVENT.Dockerfile`          |    38 | Two-stage build → `event_server` on `alpine:3.20`.                                      |
 
 ### DTOs
 
@@ -306,18 +305,18 @@ pointer and callers then read `service.Queues` directly (§9.12).
 
 ## 7. Configuration
 
-| Variable | Read at | Default | Manifest sets it |
-|---|---|---|---|
-| `EVENT_QUEUE_PORT` | `main.go:74` | none | yes (`8082`) |
-| `RABBIT_MQ_PORT` | `main.go:59` | **none — `log.Panic`** | **NO** (§9.2) |
-| `API_VERSION` | `event_core.go:27` | `v1` | yes |
-| `OTEL_COLLECTOR_ADDR` | `main.go:39` | `localhost:4317` | yes |
-| `AUTH_JWKS_URL` | `event_core.go:139` | **required** | yes |
-| `AUTH_ISSUER` | `event_core.go:145` | **required** | yes |
-| `AUTH_AUDIENCE` | `event_core.go:150` | **required** | yes |
-| `AUTH_LEEWAY` | `event_core.go:186` | `30s` | yes |
-| `AUTH_ALLOW_ANONYMOUS` | `event_core.go:135` | unset | no |
-| `REDIS_PORT` | via `node.NewNode` | — | no (client unused) |
+| Variable               | Read at             | Default                | Manifest sets it   |
+| ---------------------- | ------------------- | ---------------------- | ------------------ |
+| `EVENT_QUEUE_PORT`     | `main.go:74`        | none                   | yes (`8082`)       |
+| `RABBIT_MQ_PORT`       | `main.go:59`        | **none — `log.Panic`** | **NO** (§9.2)      |
+| `API_VERSION`          | `event_core.go:27`  | `v1`                   | yes                |
+| `OTEL_COLLECTOR_ADDR`  | `main.go:39`        | `localhost:4317`       | yes                |
+| `AUTH_JWKS_URL`        | `event_core.go:139` | **required**           | yes                |
+| `AUTH_ISSUER`          | `event_core.go:145` | **required**           | yes                |
+| `AUTH_AUDIENCE`        | `event_core.go:150` | **required**           | yes                |
+| `AUTH_LEEWAY`          | `event_core.go:186` | `30s`                  | yes                |
+| `AUTH_ALLOW_ANONYMOUS` | `event_core.go:135` | unset                  | no                 |
+| `REDIS_PORT`           | via `node.NewNode`  | —                      | no (client unused) |
 
 RabbitMQ credentials and hostname are **hardcoded** (`main.go:65`):
 
@@ -359,220 +358,14 @@ Remaining gaps:
 
 ---
 
-## 9. Known problems
-
-Every defect in this section was found during the original audit, confirmed by
-running the code, and fixed. Each entry records what was wrong and what changed,
-because the current design is largely a consequence of these corrections.
-
-### 9.1 Fixed — the registry was a nil map
-
-`EventNode.Services` was a value type that was never constructed, so
-`NewServices()` had no callers and the map was nil. Reads on a nil map are
-legal, which is why the read paths looked healthy; the first `AddService` panicked.
-
-Verified at the time:
-```
-TestZeroValueServicesPanicsOnAdd
-  PANIC CONFIRMED: assignment to entry in nil map
-```
-
-**Fixed.** `EventNode.Services` is now a `*models.Services`, built by
-`NewServices()` in `NewEventNode`. `AddService` also allocates the map on demand,
-so even a zero value is safe. `EnsureInitialised` is available for callers that
-want the allocation explicit. Regression test:
-`TestZeroValueAddServiceIsSafe`.
-
-### 9.2 Fixed — the manifest could not start the service
-
-`main.go` called `log.Panic` when `RABBIT_MQ_PORT` was unset, and the manifest
-never set it, so the pod crash-looped before reaching a handler. `log.Panic` also
-meant the deferred telemetry shutdown and logger flush never ran.
-
-**Fixed.** `RABBIT_MQ_PORT` and `RABBIT_MQ_HOST` are in the manifest, and
-`main.go` defaults the port to 5672 with a warning instead of panicking. Broker
-credentials are configurable (`RABBIT_MQ_USER`, `RABBIT_MQ_PASSWORD`) rather than
-only the hardcoded `guest:guest`.
-
-### 9.3 Fixed — `RemoveService` self-deadlocked
-
-```go
-s.mu.Lock()
-defer s.mu.Unlock()
-...
-if service, err := s.GetService(serviceId); service.IsDraining || err != nil {
-```
-
-`GetService` takes `RLock`. `sync.RWMutex` is not reentrant, so this blocked
-forever, and holding the write lock stalled every other request on the node. It
-also dereferenced `service.IsDraining` *before* testing `err`, so a missing
-service was a nil-pointer panic.
-
-Verified at the time:
-```
-TestRemoveServiceSelfDeadlocks
-  CONFIRMED: blocked indefinitely (RWMutex.Lock held, then RLock on same mutex)
-```
-
-**Fixed.** The existence check reads the map directly under a read lock, the
-drain check calls `svc.IsDraining()` which takes the service's own lock, and the
-delete is a separate critical section. The channel is closed *after* the lock is
-released, so a network call cannot block the registry. Regression test:
-`TestRemoveServiceDoesNotDeadlock`, `TestRemoveServiceMissingDoesNotPanic`.
-
-### 9.4 Fixed — queue creation always failed
-
-`GetServiceQueue` returned `(nil, nil)` for a missing queue, and `AddQueueHandler`
-read `err == nil` as "already exists", so the condition held for every queue that
-did not exist — which was all of them. `GetQueueHandler` had the same exposure and
-would have dereferenced nil.
-
-Verified at the time:
-```
-TestGetServiceQueueReturnsNilNilForMissingQueue
-  GetServiceQueue(missing) = (<nil>, <nil>)
-```
-
-**Fixed.** `ErrNotFound`, `ErrAlreadyExists` and `ErrDraining` are sentinel
-errors; the registry returns `ErrNotFound` and the handlers map each sentinel to a
-distinct status code. Tests: `TestGetServiceQueueMissingIsNotFound`,
-`TestGetMissingQueueIs404NotNilNil`, `TestStatusForMapsRegistryErrors`.
-
-### 9.5 Fixed — the drain protocol could never complete
-
-The handler set a `"draining"` tag, then called a model method that refused
-anything so tagged. RabbitMQ had already deleted the queue by then, so the broker
-and the model diverged permanently. The two handlers also disagreed on
-`durable` when passive-declaring, which closes the channel with
-`PRECONDITION_FAILED`.
-
-**Fixed.** `ClearQueueDraining` and `ClearServiceDraining` were added. The
-handler sequence is now mark → drain → broker delete → clear marker → registry
-delete, which is coherent: the marker blocks removal only while a drain is
-genuinely in flight. Both handlers derive durability from the registered queue
-rather than hardcoding it. Test: `TestDrainThenRemoveSequenceSucceeds`.
-
-### 9.6 Fixed — no reconnection
-
-A bare `*amqp.Connection` was held for the process lifetime with no
-`NotifyClose` handler. A broker restart left every handle permanently dead.
-
-**Fixed.** `eventcore.Broker` dials, watches for closure, and re-dials on an
-interval with bounded backoff. On reconnect it increments an epoch and calls
-`Reset()` on the registry, because every stored channel belongs to the dead
-connection; clients re-register rather than issuing declarations on handles that
-no longer work. Heartbeats are enabled (10s).
-
-### 9.7 Fixed — data races on per-service queue maps
-
-`GetService` returned the live `*Service` pointer after releasing the lock, and
-`GetServiceHandler` then iterated `service.Queues` while concurrent adds and
-removes mutated it. `GetAllServices` returned the internal map with no lock.
-
-**Fixed.** Each `Service` has its own `sync.RWMutex`. `GetQueue` and
-`SnapshotQueue` return copies, so a caller outside the lock cannot mutate
-registry state. `SnapshotServices` replaces both leak-prone accessors. Test:
-`TestSnapshotQueueIsIndependent`, `TestConcurrentRegistryAccess` (race-clean).
-
-### 9.8 Fixed — status codes and premature writes
-
-Every handler error collapsed to `500 Internal Server Error`, so a client could
-not tell "already exists" from "no such queue". Two handlers called
-`WriteHeader(200)` before their error path, producing Go's "superfluous
-WriteHeader" warning and a misleading status.
-
-**Fixed.** `statusFor` maps the sentinels to 404 / 409 / 423 / 500 and returns a
-JSON body with a stable `error` code. `pkg/telemetry.statusRecorder` additionally
-swallows a second `WriteHeader`. Handlers no longer call `WriteHeader` before
-knowing the outcome.
-
-### 9.9 Fixed — path parameters were ignored
-
-Every handler decoded IDs from the JSON body while the route pattern also
-declared `{service_id}` and `{queue_id}`. A GET or DELETE with an empty body
-failed at the decode step.
-
-**Fixed.** IDs come from `r.PathValue`. A body is optional and the path always
-wins. Test: `TestServiceIDComesFromThePath`.
-
-### 9.10 Fixed — leaked channels and unbounded drains
-
-One AMQP channel per service was opened and never closed, including on removal.
-The drain loop slept with no deadline and never consulted `r.Context()`, so a stuck
-consumer pinned the request open indefinitely.
-
-**Fixed.** `Service.Close` releases the channel and `RemoveService` calls it.
-`drainQueue` respects the context and the `DefaultDrainTimeout` (30s), returning
-`504` with `drain_timeout` rather than hanging.
-
-### 9.11 Fixed — discarded errors
-
-`AddServiceHandler` ignored both return values of `AddService`, so a failure was
-reported as success. Several `json.Encode` errors were ignored.
-
-**Fixed.** Every error path is handled. A duplicate registration now closes the
-channel it opened instead of leaking it.
-
-### 9.12 Fixed — trace context was never propagated
-
-Handlers derived spans from a context captured once in `main()`, not from
-`r.Context()`, so incoming `traceparent` headers were dropped. There was no
-`otelhttp` wrapper, so no server spans existed for requests themselves.
-
-**Fixed.** `pkg/telemetry.HTTPMiddleware` wraps the router and starts a span from
-the incoming trace context. Handlers now use `r.Context()`. The upstream
-`otelhttp` package was rejected: it forced an OTel SDK upgrade that broke
-`pkg/telemetry`, a poor trade on hardware with a memory budget.
-
-### 9.13 Fixed — identity drift in telemetry
-
-The OTel resource was `service.name = "Auth Node"` and the log field was
-`service = notifications`, both copy-paste errors. Dashboards filtered on
-`service.name` would have attributed this node's telemetry to two other services.
-
-**Fixed.** Both are now `event_queue`.
-
-### 9.14 Fixed — AMQP arguments were untyped
-
-`MapToTable` flattened every value to a Go `string`. AMQP field tables are typed,
-so a numeric argument such as `x-message-ttl` arrived as a string and the broker
-rejected it with a channel-level `PRECONDITION_FAILED`. A nil map also returned a
-non-nil empty table, so `QueueDeclare` never received nil args.
-
-**Fixed.** `models/amqp_table.go` infers the narrowest faithful type per value,
-and returns nil for an empty map.
-
-### 9.15 Fixed — build and deployment
-
-The runtime stage was `golang:1.26-alpine`, shipping a 269MB toolchain against a
-128Mi limit. `RUN chmod +x` ran after `COPY . .` in the runtime stage. The compose
-file referenced a `Dockerfile` that does not exist, and the root compose file
-referenced directories that do not exist.
-
-**Fixed.** The runtime is `alpine:3.20` with a static binary (41MB image,
-down from ~350MB). `make images` builds all three.
-
-### Remaining, not defects
-
-- **Single replica.** Correct for SQLite-backed services and for a single
-  broker connection.
-- **No authorization model.** Any valid token can delete any queue. This is the
-  same gap the auth service has; a scope model would close it.
-- **`loggable` is stored but unenforced.**
-- **`ServiceConfig.json` and `database/Schema.sql` are unreferenced.** Dead
-  files, harmless, but misleading. Candidates for deletion.
-- **`package internal`** for the DTOs, aliased on import. Confusing to read.
-
----
-
-## 10. Verification
+## 9. Verification
 
 **36 tests, race-clean**, in two suites.
 
-| Suite | Tests | Covers |
-|---|---:|---|
-| `models/models_test.go` | 21 | Registry initialisation, the three sentinel errors, the deadlock and nil-map regressions, the drain sequence, snapshot independence, concurrent access |
-| `handlers/handlers_test.go` | 15 | Routing, path-value extraction, status-code mapping, method enforcement, 404 vs 500, JSON field rejection |
+| Suite                       | Tests | Covers                                                                                                                                                 |
+| --------------------------- | ----: | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `models/models_test.go`     |    21 | Registry initialisation, the three sentinel errors, the deadlock and nil-map regressions, the drain sequence, snapshot independence, concurrent access |
+| `handlers/handlers_test.go` |    15 | Routing, path-value extraction, status-code mapping, method enforcement, 404 vs 500, JSON field rejection                                              |
 
 Every defect in §9 that had a runtime reproduction before the fix has a
 regression test that would fail if it were reintroduced. `make check` and
@@ -586,25 +379,26 @@ untested surface.
 ---
 
 ](#9-known-problems) records what was found and what was done
+
 > about it, because the corrections explain most of the current design.
 
 Related: [AUTH_SERVICE.md](AUTH_SERVICE.md) · [NOTIFICATIONS_SERVICE.md](NOTIFICATIONS_SERVICE.md) · [LOGGING_SERVICE.md](LOGGING_SERVICE.md) · [PLATFORM.md](PLATFORM.md)
 
 ---
 
-## 11. Remaining work
+## 10. Remaining work
 
 Sequenced so each step is independently verifiable. Everything in §9 is fixed;
 this is what is left.
 
-| # | Action | Why |
-|---|---|---|
-| 1 | Exercise the AMQP paths against a real broker | The largest untested surface: declaration, drain polling and delete are covered at the registry layer but not against RabbitMQ. A `testcontainers`-style or compose-backed integration test would close it. |
-| 2 | Add a scope model and per-route requirements | Any valid token can delete any queue. This is the same authorization gap the auth service has. |
-| 3 | Delete `ServiceConfig.json` and `database/Schema.sql` | Both unreferenced. `ServiceConfig.json` describes a topology no code creates, which actively misleads. |
-| 4 | Rename the `internal` package to `transactions` | Every DTO file declares `package internal` and is aliased on import, so the directory name never appears. |
-| 5 | Enforce `loggable`, or drop the field | Stored, returned, and never read. |
-| 6 | Respect `AUTH_ALLOW_ANONYMOUS` only outside clusters | Currently a plain env var. It logs a warning, which is the right shape; a deployment-time guard would be stronger. |
-| 7 | Bound the drain deadline by configuration | `DefaultDrainTimeout` is a constant. A busy cluster may need longer. |
+| #   | Action                                                | Why                                                                                                                                                                                                         |
+| --- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Exercise the AMQP paths against a real broker         | The largest untested surface: declaration, drain polling and delete are covered at the registry layer but not against RabbitMQ. A `testcontainers`-style or compose-backed integration test would close it. |
+| 2   | Add a scope model and per-route requirements          | Any valid token can delete any queue. This is the same authorization gap the auth service has.                                                                                                              |
+| 3   | Delete `ServiceConfig.json` and `database/Schema.sql` | Both unreferenced. `ServiceConfig.json` describes a topology no code creates, which actively misleads.                                                                                                      |
+| 4   | Rename the `internal` package to `transactions`       | Every DTO file declares `package internal` and is aliased on import, so the directory name never appears.                                                                                                   |
+| 5   | Enforce `loggable`, or drop the field                 | Stored, returned, and never read.                                                                                                                                                                           |
+| 6   | Respect `AUTH_ALLOW_ANONYMOUS` only outside clusters  | Currently a plain env var. It logs a warning, which is the right shape; a deployment-time guard would be stronger.                                                                                          |
+| 7   | Bound the drain deadline by configuration             | `DefaultDrainTimeout` is a constant. A busy cluster may need longer.                                                                                                                                        |
 
 Items 3 and 4 are cleanup. Items 1 and 2 are the ones that matter.
